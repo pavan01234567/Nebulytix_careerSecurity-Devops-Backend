@@ -4,6 +4,7 @@ package com.neb.repo;
 import java.util.List;
 import java.util.Optional;
 
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -47,4 +48,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
              AND com.neb.constants.Role.ROLE_CLIENT NOT MEMBER OF u.roles
     		""")
     List<Users> findOnlyAdmin();
+    List<Employee> findByProject_Id(Long projectId);
+   ;
+
+    
+    
 }

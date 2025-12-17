@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,21 +18,26 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.neb.constants.WorkStatus;
+import com.neb.dto.AddProjectRequestDto;
 import com.neb.dto.AddWorkRequestDto;
 import com.neb.dto.EmployeeDetailsResponseDto;
 import com.neb.dto.UpdateEmployeeRequestDto;
-import com.neb.dto.UpdateEmployeeResponseDto;
 import com.neb.dto.WorkResponseDto;
+import com.neb.dto.client.ClientDto;
 import com.neb.dto.user.AdminProfileDto;
 import com.neb.dto.user.RegisterNewClientRequest;
 import com.neb.dto.user.RegisterNewUerRequest;
 import com.neb.dto.user.UserDto;
+import com.neb.entity.Client;
 import com.neb.entity.Employee;
+import com.neb.entity.Project;
 import com.neb.entity.Users;
 import com.neb.entity.Work;
 import com.neb.exception.CustomeException;
 import com.neb.exception.ResourceNotFoundException;
+import com.neb.repo.ClientRepository;
 import com.neb.repo.EmployeeRepository;
+import com.neb.repo.ProjectRepository;
 import com.neb.repo.UsersRepository;
 import com.neb.repo.WorkRepository;
 import com.neb.service.AdminService;
@@ -57,6 +61,8 @@ public class AdminServiceImpl implements AdminService{
 	
 	@Autowired
     private WorkRepository workRepo;
+	@Autowired
+	private ProjectRepository projectRepo;
 
     @Autowired
     private ModelMapper mapper;
@@ -72,6 +78,8 @@ public class AdminServiceImpl implements AdminService{
     
     @Value("${task.attachment}")
     private String uploadDir;
+    @Autowired
+    private ClientRepository  clientRepo;
     
     
     
@@ -390,5 +398,31 @@ public class AdminServiceImpl implements AdminService{
          System.out.println(allAdmin);
 		 return allAdmin;
 	}
+	
+	
+	@Override
+	public List<ClientDto> getClientList() {
+	    List<Client> clients = clientRepo.findAll();
+
+	    return clients.stream().map(c -> {
+	        ClientDto dto = new ClientDto();
+	        dto.setId(c.getId());
+	        dto.setCompanyName(c.getCompanyName());
+	        dto.setContactPerson(c.getContactPerson());
+	        dto.setContactEmail(c.getContactEmail());
+	        dto.setPhone(c.getPhone());
+	        dto.setAlternatePhone(c.getAlternatePhone());
+	        dto.setAddress(c.getAddress());
+	        dto.setWebsite(c.getWebsite());
+	        dto.setIndustryType(c.getIndustryType());
+	        dto.setGstNumber(c.getGstNumber());
+	        dto.setStatus(c.getStatus());
+	        dto.setCreatedDate(c.getCreatedDate());
+	        dto.setUpdatedDate(c.getUpdatedDate());
+	        return dto;
+	    }).collect(Collectors.toList());
+	}
+
+	   
 	
 	}

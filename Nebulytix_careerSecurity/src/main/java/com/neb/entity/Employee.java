@@ -70,6 +70,10 @@ public class Employee {
     // One employee can have multiple payslips
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payslip> payslips = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    private Project project;
+
     
     public Employee() {}
     

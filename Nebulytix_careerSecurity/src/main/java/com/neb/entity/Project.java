@@ -44,7 +44,7 @@ public class Project {
     private LocalDate updatedDate;
 
     // MANY PROJECTS → ONE CLIENT
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "client_id")
     private Client client;
 

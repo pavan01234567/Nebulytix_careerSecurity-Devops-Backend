@@ -1,7 +1,6 @@
 //admin controller
 package com.neb.controller;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -29,23 +28,28 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.neb.constants.Role;
 import com.neb.dto.AddEmployeeRequestDto;
-
+import com.neb.dto.AddProjectRequestDto;
 import com.neb.dto.AddWorkRequestDto;
 import com.neb.dto.EmployeeDetailsResponseDto;
 import com.neb.dto.GeneratePayslipRequest;
 import com.neb.dto.PayslipDto;
+import com.neb.dto.ProjectResponseDto;
 import com.neb.dto.ResponseMessage;
 import com.neb.dto.UpdateEmployeeRequestDto;
+import com.neb.dto.UpdateProjectRequestDto;
 import com.neb.dto.WorkResponseDto;
+import com.neb.dto.client.ClientDto;
 import com.neb.dto.user.AdminProfileDto;
 import com.neb.dto.user.RegisterNewClientRequest;
 import com.neb.dto.user.RegisterNewUerRequest;
 import com.neb.dto.user.UserDto;
 import com.neb.entity.Payslip;
+import com.neb.entity.Project;
 import com.neb.entity.Users;
 import com.neb.service.AdminService;
 import com.neb.service.EmployeeService;
 import com.neb.service.HrService;
+import com.neb.service.ProjectService;
 import com.neb.service.UsersService;
 
 
@@ -62,6 +66,8 @@ public class AdminController {
 	
 	@Autowired
 	private EmployeeService employeeService;
+	@Autowired
+	private ProjectService projectService;
 	
     @PostMapping("/create-admin")
     public ResponseEntity<ResponseMessage> createAdmin(@RequestBody UserDto dto) {
@@ -89,7 +95,7 @@ public class AdminController {
         );
     }
     
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/me")
     public ResponseEntity<ResponseMessage<AdminProfileDto>> getMyProfile() {
 
@@ -108,21 +114,21 @@ public class AdminController {
 //		
 //		return ResponseEntity.ok(new ResponseMessage<List<EmployeeDetailsResponseDto>>(HttpStatus.OK.value(), HttpStatus.OK.name(), "All Employee fetched successfully", employeeList));
 //	}
-	 @PostMapping(value = "/work/add", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-	
-	    public ResponseEntity<ResponseMessage<String>> addWork(
-	        @RequestPart("dto") AddWorkRequestDto dto,
-	        @RequestPart(value = "file", required = false) MultipartFile file
-	    ) throws IOException {
-
-	        String workRes = adminService.assignWork(dto, file);
-
-	        return ResponseEntity.ok(
-	            new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Work added successfully", workRes)
-	        );
-	    }
-        
-	    
+//	 @PostMapping(value = "/work/add", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+//	 
+//	    public ResponseEntity<ResponseMessage<String>> addWork(
+//	        @RequestPart("dto") AddWorkRequestDto dto,
+//	        @RequestPart(value = "file", required = false) MultipartFile file
+//	    ) throws IOException {
+//
+//	        String workRes = adminService.assignWork(dto, file);
+//
+//	        return ResponseEntity.ok(
+//	            new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Work added successfully", workRes)
+//	        );
+//	    }
+//        
+//	    
 	    // ✅ Get all Work of employee
 	    @GetMapping("/getAllWork/{empId}")
 	    public ResponseEntity<ResponseMessage<List<WorkResponseDto>>> getAllWork(@PathVariable Long empId) {
@@ -236,5 +242,64 @@ public class AdminController {
 	          return ResponseEntity.ok(
 	              new ResponseMessage<>(200, "OK", "Admin fetched successfully", allAdmin)
 	      );
+	    @GetMapping("/clients")
+	    public ResponseEntity<ResponseMessage<List<ClientDto>>> getClientList() {
+	        List<ClientDto> clients = adminService.getClientList();
+	        return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", "Client list fetched successfully", clients));
+	    }
+
+	    @PostMapping("/project/add")
+	    public ResponseEntity<ResponseMessage<Long>> addProject(@RequestBody AddProjectRequestDto req) {
+	        Project project = projectService.addProject(req);
+	        return ResponseEntity.ok(
+	                new ResponseMessage<>(200, "SUCCESS", "Project added successfully", project.getId())
+	        );
+	    }
+	    
+	    // GET All Projects
+	    @GetMapping("/projects")
+	    @PreAuthorize("hasRole('ROLE_ADMIN')")
+	    public ResponseEntity<ResponseMessage<List<ProjectResponseDto>>> getAllProjects() {
+	        return ResponseEntity.ok(projectService.getAllProjects());
+	    }
+
+	    // GET Project By ID
+	    @GetMapping("/{projectId}")
+	    public ResponseEntity<ResponseMessage<ProjectResponseDto>> getProject(@PathVariable Long projectId) {
+	        return ResponseEntity.ok(projectService.getProjectById(projectId));
+	    }
+
+	    // UPDATE Project
+	    @PutMapping("/{projectId}")
+	    public ResponseEntity<ResponseMessage<ProjectResponseDto>> updateProject(
+	            @PathVariable Long projectId,
+	            @RequestBody UpdateProjectRequestDto dto) {
+	        return ResponseEntity.ok(projectService.updateProject(projectId, dto));
+	    }
+
+	    // DELETE Project
+	    @PreAuthorize("hasRole('ROLE_ADMIN')")
+	    @DeleteMapping("/{projectId}")
+	    public ResponseEntity<ResponseMessage<String>> deleteProject(@PathVariable Long projectId) {
+	        return ResponseEntity.ok(projectService.deleteProject(projectId));
+	    }
+	    
+	    @PutMapping("/project/{projectId}/status")
+	    @PreAuthorize("hasRole('ROLE_ADMIN')")
+	    public ResponseEntity<ResponseMessage<ProjectResponseDto>> updateProjectStatus(
+	            @PathVariable Long projectId,
+	            @RequestParam String status) {
+
+	        // Call service method to update status
+	        ProjectResponseDto updatedProject = projectService.updateProjectStatus(projectId, status);
+
+	        return ResponseEntity.ok(
+	                new ResponseMessage<>(
+	                        HttpStatus.OK.value(),
+	                        HttpStatus.OK.name(),
+	                        "Project status updated successfully",
+	                        updatedProject
+	                )
+	        );
 	    }
 }

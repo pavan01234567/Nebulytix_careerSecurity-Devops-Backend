@@ -62,9 +62,7 @@ public class EmployeeController {
 	 // Get employee details
     @GetMapping("/get/{id}")
     public ResponseMessage<Employee> getEmployee(@PathVariable Long id) {
-    	System.out.println(id);
         Employee emp = employeeService.getEmployeeById(id);
-        System.out.println(emp);
         return new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee fetched successfully", emp);
     }
     
@@ -177,5 +175,6 @@ public class EmployeeController {
               new ResponseMessage<>(200, "OK", "Employee fetched successfully", allHrAndEmployee)
       );
     }
+    
   
 }

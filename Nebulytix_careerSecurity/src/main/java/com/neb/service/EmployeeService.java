@@ -39,4 +39,5 @@ public interface EmployeeService {
     List<EmployeeDetailsResponseDto> getOnlyHr();
     
     List<EmployeeDetailsResponseDto> getOnlyEmployee();
+
 }

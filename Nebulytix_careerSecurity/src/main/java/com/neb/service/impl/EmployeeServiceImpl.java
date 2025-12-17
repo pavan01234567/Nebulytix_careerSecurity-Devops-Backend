@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.neb.constants.WorkStatus;
 import com.neb.dto.AddDailyReportRequestDto;
 import com.neb.dto.EmployeeDetailsResponseDto;
-import com.neb.dto.EmployeeResponseDto;
 import com.neb.dto.WorkResponseDto;
 import com.neb.dto.employee.AddEmployeeRequest;
 import com.neb.dto.employee.EmployeeProfileDto;

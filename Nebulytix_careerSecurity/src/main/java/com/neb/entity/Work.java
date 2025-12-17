@@ -22,6 +22,7 @@
 package com.neb.entity;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.neb.constants.WorkStatus;
@@ -58,4 +59,14 @@ public class Work {
     private Employee employee;
     
     private String attachmentUrl;
+
+	public void setProject(Project project) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public static Optional<Users> stream() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
