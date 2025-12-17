@@ -378,5 +378,17 @@ public class AdminServiceImpl implements AdminService{
 			throw new CustomeException("Admin not found with id :"+id);
 		}
 	}
+
+	@Override
+	public List<UserDto> getOnlyAdmin() 
+	{
+		  List<Users> admins = empRepo.findOnlyAdmin();
+		  System.out.println(admins);
+		 List<UserDto> allAdmin = admins.stream()
+			        .map(emp -> mapper.map(emp, UserDto.class))
+			        .collect(Collectors.toList());
+         System.out.println(allAdmin);
+		 return allAdmin;
+	}
 	
 	}

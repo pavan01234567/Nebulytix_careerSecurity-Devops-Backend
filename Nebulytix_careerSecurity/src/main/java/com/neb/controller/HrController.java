@@ -243,6 +243,12 @@ public class HrController {
         return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Job deleted successfully", result));
     }
 
+    @DeleteMapping("deletePaySlip/{id}")
+    public ResponseEntity<ResponseMessage<String>> deletePayslip(@PathVariable Long id) {
+        service.deletePayslip(id);
+        return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "PaySlip Deleted Successfully", null));
+    }
+    
     @PostMapping("/logout")
     public ResponseEntity<ResponseMessage<String>> logout() {
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Logout successful", "Admin logged out successfully"));

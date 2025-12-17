@@ -43,4 +43,6 @@ public interface AdminService {
 	//public AddEmployeeResponseDto addAdmin(AddEmployeeRequestDto addEmpReq);
 
 	public String deleteAdmin(Long id);
+	
+	public List<UserDto> getOnlyAdmin();
 }

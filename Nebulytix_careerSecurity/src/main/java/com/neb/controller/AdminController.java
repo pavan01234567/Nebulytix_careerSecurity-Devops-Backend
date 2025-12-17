@@ -228,4 +228,13 @@ public class AdminController {
 	         )
 	     );
 	 } 
+	 
+	 // GET /api/employees/hr-employee
+	    @GetMapping("fetch/admin")
+	    public ResponseEntity<ResponseMessage<List<UserDto>>> getAllEmployees() {
+	            List<UserDto> allAdmin = adminService.getOnlyAdmin();
+	          return ResponseEntity.ok(
+	              new ResponseMessage<>(200, "OK", "Admin fetched successfully", allAdmin)
+	      );
+	    }
 }

@@ -69,6 +69,7 @@ public class AuthController {
     public ResponseEntity<ResponseMessage<RefreshTokenResponse>> refreshToken(HttpServletRequest request) {
     	
     	String refreshToken = null;
+    	System.out.println("refresh token checking with cookies : "+request.getCookies());
     	if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("refreshToken".equals(cookie.getName())) {
