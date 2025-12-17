@@ -423,6 +423,26 @@ public class AdminServiceImpl implements AdminService{
 	    }).collect(Collectors.toList());
 	}
 
+	@Override
+	public List<EmployeeDetailsResponseDto> getOnlyHr() {
+		 List<Employee> employees = empRepo.findOnlyHr();
+		 List<EmployeeDetailsResponseDto> allHr = employees.stream()
+			        .map(emp -> mapper.map(emp, EmployeeDetailsResponseDto.class))
+			        .collect(Collectors.toList());
+
+		 return allHr;
+	}
+
+	@Override
+	public List<EmployeeDetailsResponseDto> getOnlyEmployee() {
+		 List<Employee> employees = empRepo.findOnlyEmployees();
+		 List<EmployeeDetailsResponseDto> allEmployee = employees.stream()
+			        .map(emp -> mapper.map(emp, EmployeeDetailsResponseDto.class))
+			        .collect(Collectors.toList());
+
+		 return allEmployee;
+	}
+
 	   
 	
 	}

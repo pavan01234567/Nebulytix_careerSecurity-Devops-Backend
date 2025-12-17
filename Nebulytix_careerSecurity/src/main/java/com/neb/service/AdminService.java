@@ -50,5 +50,7 @@ public interface AdminService {
 	
 	List<ClientDto> getClientList();
 //    Project addProject(AddProjectRequestDto req);
+	public List<EmployeeDetailsResponseDto> getOnlyHr();
+	public List<EmployeeDetailsResponseDto> getOnlyEmployee();
 
 }

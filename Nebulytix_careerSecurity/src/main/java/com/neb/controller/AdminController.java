@@ -237,11 +237,32 @@ public class AdminController {
 	 
 	 // GET /api/employees/hr-employee
 	    @GetMapping("fetch/admin")
-	    public ResponseEntity<ResponseMessage<List<UserDto>>> getAllEmployees() {
+	    public ResponseEntity<ResponseMessage<List<UserDto>>> getAllAdmin() {
 	            List<UserDto> allAdmin = adminService.getOnlyAdmin();
 	          return ResponseEntity.ok(
 	              new ResponseMessage<>(200, "OK", "Admin fetched successfully", allAdmin)
 	      );
+	    }
+	    
+	    // GET /api/admin/fetch/hr
+	    @GetMapping("fetch/hr")
+	    public ResponseEntity<ResponseMessage<List<EmployeeDetailsResponseDto>>> getAllHr() {
+	          List<EmployeeDetailsResponseDto> allHrAndEmployee = adminService.getOnlyHr();
+//	        return new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee and HR fetched successfully", employees);
+	        return ResponseEntity.ok(
+	              new ResponseMessage<>(200, "OK", "Hr And Employee fetched successfully", allHrAndEmployee)
+	      );
+	    }
+	    
+	 // GET /api/admin/fetch/employee
+	    @GetMapping("fetch/employee")
+	    public ResponseEntity<ResponseMessage<List<EmployeeDetailsResponseDto>>> getAllEmployees() {
+	          List<EmployeeDetailsResponseDto> allHrAndEmployee = adminService.getOnlyEmployee();
+	          return ResponseEntity.ok(
+	              new ResponseMessage<>(200, "OK", "Employee fetched successfully", allHrAndEmployee)
+	      );
+	    }
+	    
 	    @GetMapping("/clients")
 	    public ResponseEntity<ResponseMessage<List<ClientDto>>> getClientList() {
 	        List<ClientDto> clients = adminService.getClientList();

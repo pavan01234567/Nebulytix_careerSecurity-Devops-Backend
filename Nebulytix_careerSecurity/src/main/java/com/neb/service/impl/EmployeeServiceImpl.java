@@ -1,7 +1,6 @@
 package com.neb.service.impl;
 import java.io.File;
 import java.io.IOException;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,6 +9,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import java.util.stream.Collectors;import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -346,29 +347,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 	    return true;
 	}
 
-
-
-	@Override
-	public List<EmployeeDetailsResponseDto> getOnlyHr() {
-		 List<Employee> employees = employeeRepository.findOnlyHr();
-		 List<EmployeeDetailsResponseDto> allHrAndEmployee = employees.stream()
-			        .map(emp -> mapper.map(emp, EmployeeDetailsResponseDto.class))
-			        .collect(Collectors.toList());
-
-		 return allHrAndEmployee;
-	}
-
-
-
-	@Override
-	public List<EmployeeDetailsResponseDto> getOnlyEmployee() {
-		 List<Employee> employees = employeeRepository.findOnlyEmployees();
-		 List<EmployeeDetailsResponseDto> allEmployee = employees.stream()
-			        .map(emp -> mapper.map(emp, EmployeeDetailsResponseDto.class))
-			        .collect(Collectors.toList());
-
-		 return allEmployee;
-	}
 	
 }
 	       
