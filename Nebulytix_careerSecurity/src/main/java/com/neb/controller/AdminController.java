@@ -39,6 +39,7 @@ import com.neb.dto.UpdateEmployeeRequestDto;
 import com.neb.dto.UpdateProjectRequestDto;
 import com.neb.dto.WorkResponseDto;
 import com.neb.dto.client.ClientDto;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.user.AdminProfileDto;
 import com.neb.dto.user.RegisterNewClientRequest;
 import com.neb.dto.user.RegisterNewUerRequest;
@@ -246,20 +247,20 @@ public class AdminController {
 	    
 	    // GET /api/admin/fetch/hr
 	    @GetMapping("fetch/hr")
-	    public ResponseEntity<ResponseMessage<List<EmployeeDetailsResponseDto>>> getAllHr() {
-	          List<EmployeeDetailsResponseDto> allHrAndEmployee = adminService.getOnlyHr();
+	    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getAllHr() {
+	           List<EmployeeProfileDto> allHr = adminService.getOnlyHr();
 //	        return new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee and HR fetched successfully", employees);
 	        return ResponseEntity.ok(
-	              new ResponseMessage<>(200, "OK", "Hr And Employee fetched successfully", allHrAndEmployee)
+	              new ResponseMessage<>(200, "OK", "Hr fetched successfully", allHr)
 	      );
 	    }
 	    
 	 // GET /api/admin/fetch/employee
 	    @GetMapping("fetch/employee")
-	    public ResponseEntity<ResponseMessage<List<EmployeeDetailsResponseDto>>> getAllEmployees() {
-	          List<EmployeeDetailsResponseDto> allHrAndEmployee = adminService.getOnlyEmployee();
+	    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getAllEmployees() {
+	           List<EmployeeProfileDto> allEmployee = adminService.getOnlyEmployee();
 	          return ResponseEntity.ok(
-	              new ResponseMessage<>(200, "OK", "Employee fetched successfully", allHrAndEmployee)
+	              new ResponseMessage<>(200, "OK", "Employee fetched successfully", allEmployee)
 	      );
 	    }
 	    

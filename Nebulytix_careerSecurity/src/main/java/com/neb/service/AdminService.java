@@ -6,13 +6,16 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import com.neb.dto.*;
+import com.neb.dto.AddWorkRequestDto;
+import com.neb.dto.EmployeeDetailsResponseDto;
+import com.neb.dto.UpdateEmployeeRequestDto;
+import com.neb.dto.WorkResponseDto;
 import com.neb.dto.client.ClientDto;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.user.AdminProfileDto;
 import com.neb.dto.user.RegisterNewClientRequest;
 import com.neb.dto.user.RegisterNewUerRequest;
 import com.neb.dto.user.UserDto;
-import com.neb.entity.Project;
 
 public interface AdminService {
 
@@ -50,7 +53,7 @@ public interface AdminService {
 	
 	List<ClientDto> getClientList();
 //    Project addProject(AddProjectRequestDto req);
-	public List<EmployeeDetailsResponseDto> getOnlyHr();
-	public List<EmployeeDetailsResponseDto> getOnlyEmployee();
+	public List<EmployeeProfileDto> getOnlyHr();
+	public List<EmployeeProfileDto> getOnlyEmployee();
 
 }

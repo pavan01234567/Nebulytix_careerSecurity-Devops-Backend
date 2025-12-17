@@ -18,19 +18,18 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.neb.constants.WorkStatus;
-import com.neb.dto.AddProjectRequestDto;
 import com.neb.dto.AddWorkRequestDto;
 import com.neb.dto.EmployeeDetailsResponseDto;
 import com.neb.dto.UpdateEmployeeRequestDto;
 import com.neb.dto.WorkResponseDto;
 import com.neb.dto.client.ClientDto;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.user.AdminProfileDto;
 import com.neb.dto.user.RegisterNewClientRequest;
 import com.neb.dto.user.RegisterNewUerRequest;
 import com.neb.dto.user.UserDto;
 import com.neb.entity.Client;
 import com.neb.entity.Employee;
-import com.neb.entity.Project;
 import com.neb.entity.Users;
 import com.neb.entity.Work;
 import com.neb.exception.CustomeException;
@@ -424,23 +423,63 @@ public class AdminServiceImpl implements AdminService{
 	}
 
 	@Override
-	public List<EmployeeDetailsResponseDto> getOnlyHr() {
+	public List<EmployeeProfileDto> getOnlyHr() {
 		 List<Employee> employees = empRepo.findOnlyHr();
-		 List<EmployeeDetailsResponseDto> allHr = employees.stream()
-			        .map(emp -> mapper.map(emp, EmployeeDetailsResponseDto.class))
+		 
+		 return employees.stream()
+			        .map(emp -> {
+			            EmployeeProfileDto dto = new EmployeeProfileDto();
+			            dto.setId(emp.getId());
+			            dto.setFirstName(emp.getFirstName());
+			            dto.setLastName(emp.getLastName());
+			            dto.setDesignation(emp.getDesignation());
+			            dto.setDepartment(emp.getDepartment());
+			            dto.setGender(emp.getGender());
+			            dto.setJoiningDate(emp.getJoiningDate());
+			            dto.setSalary(emp.getSalary());
+			            dto.setProfilePictureUrl(emp.getProfilePictureUrl());
+
+			            // If mobile is in Employee
+			            dto.setMobile(emp.getMobile());
+
+			            // From User entity
+			            if (emp.getUser() != null) {
+			                dto.setEmail(emp.getUser().getEmail());
+			            }
+
+			            return dto;
+			        })
 			        .collect(Collectors.toList());
 
-		 return allHr;
 	}
 
 	@Override
-	public List<EmployeeDetailsResponseDto> getOnlyEmployee() {
-		 List<Employee> employees = empRepo.findOnlyEmployees();
-		 List<EmployeeDetailsResponseDto> allEmployee = employees.stream()
-			        .map(emp -> mapper.map(emp, EmployeeDetailsResponseDto.class))
-			        .collect(Collectors.toList());
+	public List<EmployeeProfileDto> getOnlyEmployee() {
+		 List<Employee> allEmployees = empRepo.findOnlyEmployees();
+		 return allEmployees.stream()
+			        .map(emp -> {
+			            EmployeeProfileDto dto = new EmployeeProfileDto();
+			            dto.setId(emp.getId());
+			            dto.setFirstName(emp.getFirstName());
+			            dto.setLastName(emp.getLastName());
+			            dto.setDesignation(emp.getDesignation());
+			            dto.setDepartment(emp.getDepartment());
+			            dto.setGender(emp.getGender());
+			            dto.setJoiningDate(emp.getJoiningDate());
+			            dto.setSalary(emp.getSalary());
+			            dto.setProfilePictureUrl(emp.getProfilePictureUrl());
 
-		 return allEmployee;
+			            // If mobile is in Employee
+			            dto.setMobile(emp.getMobile());
+
+			            // From User entity
+			            if (emp.getUser() != null) {
+			                dto.setEmail(emp.getUser().getEmail());
+			            }
+
+			            return dto;
+			        })
+			        .collect(Collectors.toList());
 	}
 
 	   
