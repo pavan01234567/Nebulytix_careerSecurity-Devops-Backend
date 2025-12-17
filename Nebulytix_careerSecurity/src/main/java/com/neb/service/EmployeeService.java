@@ -36,8 +36,6 @@ public interface EmployeeService {
     
     boolean deleteProfilePicture(Long employeeId);
     
-    List<EmployeeDetailsResponseDto> getOnlyHr();
     
-    List<EmployeeDetailsResponseDto> getOnlyEmployee();
 
 }

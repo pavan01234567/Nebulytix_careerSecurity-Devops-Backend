@@ -42,11 +42,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     		 SELECT DISTINCT u
              FROM Users u
              WHERE com.neb.constants.Role.ROLE_ADMIN MEMBER OF u.roles
-             AND com.neb.constants.Role.ROLE_HR NOT MEMBER OF u.roles
-             AND com.neb.constants.Role.ROLE_EMPLOYEE NOT MEMBER OF u.roles
-             AND com.neb.constants.Role.ROLE_MANAGER NOT MEMBER OF u.roles
-             AND com.neb.constants.Role.ROLE_CLIENT NOT MEMBER OF u.roles
-    		""")
+              """)
     List<Users> findOnlyAdmin();
     List<Employee> findByProject_Id(Long projectId);
    ;
