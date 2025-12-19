@@ -140,28 +140,6 @@ public class AdminServiceImpl implements AdminService{
         return dto;
 	}
     
-   
-    
-     
-//     //  ----------Get Employee List-------------
-//	@Override
-//	public List<EmployeeDetailsResponseDto> getEmployeeList() {
-//		
-//		//getting all employee list without admin
-//		  List<Employee> employeeList=	empRepo.findByLoginRoleNotIn(List.of("admin","hr"));	    
-//	    if(employeeList==null) {
-//	    	throw new CustomeException("Employees not found");
-//	    }
-//	    
-//	    List<EmployeeDetailsResponseDto> empListRes = employeeList.stream().map(emp->{
-//	    	
-//	    	EmployeeDetailsResponseDto empResDto = mapper.map(emp, EmployeeDetailsResponseDto.class);
-//	    	return empResDto;
-//	    }).collect(Collectors.toList());
-//	    
-//	    return empListRes;
-//	}
-//	
            //............. adding work ..............
     public String assignWork(AddWorkRequestDto request,MultipartFile file) {
         Employee emp = empRepo.findById(request.getEmployeeId())
@@ -348,30 +326,6 @@ public class AdminServiceImpl implements AdminService{
 	    return mapper.map(updatedHr, EmployeeDetailsResponseDto.class);
 	}
 
-
-
-//	// add  admin 
-//	@Override
-//	public AddEmployeeResponseDto addAdmin(AddEmployeeRequestDto addEmpReq) 
-//	{
-//		 // check if employee with same email already exists
-//        if (empRepo.existsByEmail(addEmpReq.getEmail())) {
-//        	throw new CustomeException("Admin with email :" + addEmpReq.getEmail() + " already exists");
-//        }
-//
-//        // map DTO to entity
-//        Employee emp = mapper.map(addEmpReq, Employee.class);
-//
-//        // save entity
-//        Employee savedEmp = empRepo.save(emp);
-//
-//        // map saved entity to response DTO
-//        AddEmployeeResponseDto addEmpRes = mapper.map(savedEmp, AddEmployeeResponseDto.class);
-//
-//        return addEmpRes;
-//		
-//	}
-
      // delete the admin based on ID
 	@Override
 	public String deleteAdmin(Long id)
@@ -388,12 +342,12 @@ public class AdminServiceImpl implements AdminService{
 	}
 
 	@Override
-	public List<UserDto> getOnlyAdmin() 
+	public List<AdminProfileDto> getOnlyAdmin() 
 	{
 		  List<Users> admins = empRepo.findOnlyAdmin();
 		  System.out.println(admins);
-		 List<UserDto> allAdmin = admins.stream()
-			        .map(emp -> mapper.map(emp, UserDto.class))
+		 List<AdminProfileDto> allAdmin = admins.stream()
+			        .map(emp -> mapper.map(emp,AdminProfileDto.class))
 			        .collect(Collectors.toList());
          System.out.println(allAdmin);
 		 return allAdmin;

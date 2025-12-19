@@ -50,7 +50,7 @@ public interface AdminService {
 
 	public String deleteAdmin(Long id);
 	
-	public List<UserDto> getOnlyAdmin();
+	public List<AdminProfileDto> getOnlyAdmin();
 	
 	List<ClientDto> getClientList();
 //    Project addProject(AddProjectRequestDto req);
