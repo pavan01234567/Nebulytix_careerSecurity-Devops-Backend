@@ -14,28 +14,37 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.neb.dto.AddEmployeeRequestDto;
-import com.neb.dto.AddEmployeeResponseDto;
 import com.neb.dto.AddJobRequestDto;
 import com.neb.dto.EmployeeDetailsResponseDto;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.UpdateEmployeeRequestDto;
-import com.neb.dto.UpdatePasswordRequestDto;
+import com.neb.dto.salary.SalaryRequestDto;
+import com.neb.dto.salary.SalaryResponseDto;
 import com.neb.entity.DailyReport;
 import com.neb.entity.Employee;
+import com.neb.entity.EmployeeSalary;
 import com.neb.entity.Job;
 import com.neb.entity.JobApplication;
 import com.neb.entity.Payslip;
+import com.neb.entity.Users;
+import com.neb.exception.ActiveSalaryDeleteException;
 import com.neb.exception.CustomeException;
+import com.neb.exception.EmployeeNotFoundException;
+import com.neb.exception.NoActiveSalaryException;
+import com.neb.exception.SalaryNotFoundException;
 import com.neb.repo.DailyReportRepository;
 import com.neb.repo.EmployeeRepository;
+import com.neb.repo.EmployeeSalaryRepository;
 import com.neb.repo.JobApplicationRepository;
 import com.neb.repo.JobRepository;
 import com.neb.repo.PayslipRepository;
+import com.neb.repo.UsersRepository;
 import com.neb.service.EmailService;
 import com.neb.service.HrService;
 import com.neb.util.ReportGeneratorPdf;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class HrServiceImpl implements HrService {
@@ -43,6 +52,9 @@ public class HrServiceImpl implements HrService {
     @Autowired
     private EmployeeRepository empRepo;
 
+    @Autowired
+    private EmployeeSalaryRepository salRepo;
+    
     @Autowired
     private PayslipRepository payslipRepo;
 
@@ -60,19 +72,12 @@ public class HrServiceImpl implements HrService {
 
     @Autowired
     private ModelMapper mapper;
+    
+    @Autowired 
+    private UsersRepository usersRepository;
 
     @Value("${daily-report.folder-path}")
     private String dailyReportFolderPath;
-
-    // ======================= EMPLOYEE METHODS =========================
-
-    
-//    @Override
-//    public List<EmployeeDetailsResponseDto> getEmployeeList() {
-//        List<Employee> employees = empRepo.findByLoginRoleNotIn(List.of("admin", "hr"));
-//        if (employees.isEmpty()) throw new CustomeException("No employees found");
-//        return employees.stream().map(emp -> mapper.map(emp, EmployeeDetailsResponseDto.class)).collect(Collectors.toList());
-//    }
 
     @Override
     public EmployeeDetailsResponseDto getEmployee(Long id) {
@@ -82,8 +87,22 @@ public class HrServiceImpl implements HrService {
 
     @Override
     public String deleteById(Long id) {
-        empRepo.deleteById(id);
-        return "Employee with ID " + id + " deleted successfully";
+    	Employee employee = empRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        // Soft delete employee
+        employee.setEmpStatus("inactive");
+
+        // Disable linked user
+        Users user = employee.getUser();
+        if (user != null) {
+            user.setEnabled(false);
+            usersRepository.save(user);
+        }
+
+        empRepo.save(employee);
+
+        return "Employee and user account deactivated successfully";
     }
 
     @Override
@@ -287,4 +306,86 @@ public class HrServiceImpl implements HrService {
         
     
 	}
+
+	@Override
+	@Transactional
+	public SalaryResponseDto addSalary(SalaryRequestDto salRequestDto) 
+	{
+		 Employee employee = empRepo.findById(salRequestDto.getEmployeeId())
+		            .orElseThrow(() ->new EmployeeNotFoundException("Employee not found with id: " + salRequestDto.getEmployeeId()));
+
+        salRepo.findByEmployeeIdAndActiveTrue(employee.getId())
+                .ifPresent(existing -> {
+                    if (!salRequestDto.getEffectiveFrom().isAfter(LocalDate.now())) {
+                        existing.setActive(false);
+                        salRepo.save(existing);
+                    }
+                });
+
+        EmployeeSalary salary = mapper.map(salRequestDto, EmployeeSalary.class);
+               salary.setId(null);
+               salary.setEmployee(employee);
+               salary.setActive(!salRequestDto.getEffectiveFrom().isAfter(LocalDate.now()));
+               
+       return  mapper.map(salRepo.save(salary),SalaryResponseDto.class);
+	}
+
+	@Override
+	public SalaryResponseDto getActiveSalary(Long employeeId) {
+		EmployeeSalary salary = salRepo.findByEmployeeIdAndActiveTrue(employeeId)
+                                .orElseThrow(() ->new SalaryNotFoundException("Active salary not found for employeeId: " + employeeId));
+
+       return mapper.map(salary, SalaryResponseDto.class);
+	}
+
+	@Override
+	public List<SalaryResponseDto> getAllActiveSalaries() {
+		 List<EmployeeSalary> activeSalaries = salRepo.findByActiveTrue();
+            if (activeSalaries.isEmpty()) {
+            	  throw new NoActiveSalaryException("No active salaries found");
+	        }
+
+	        return activeSalaries.stream()
+	                .map(salary -> mapper.map(salary, SalaryResponseDto.class))
+	                .toList();
+	  }
+	
+	@Override
+	@Transactional
+	public SalaryResponseDto updateSalary(Long salaryId, SalaryRequestDto dto) {
+
+	    EmployeeSalary salary = salRepo.findById(salaryId)
+	            .orElseThrow(() ->new SalaryNotFoundException("Salary not found with id: " + salaryId));
+
+	    salary.setBasicSalary(dto.getBasicSalary());
+	    salary.setHra(dto.getHra());
+	    salary.setAllowance(dto.getAllowance());
+	    salary.setDeductions(dto.getDeductions());
+	    salary.setNetSalary(dto.getNetSalary());
+	    salary.setEffectiveFrom(dto.getEffectiveFrom());
+
+	    return mapper.map(salRepo.save(salary), SalaryResponseDto.class);
+	}
+
+	@Override
+	@Transactional
+	public String deleteSalary(Long salaryId) {
+		 EmployeeSalary salary = salRepo.findById(salaryId)
+		            .orElseThrow(() -> new SalaryNotFoundException("Salary not found with id: " + salaryId));
+
+		    //  Prevent redundant operation
+		    if (!salary.isActive()) {
+		        return "Salary is already inactive";
+		    }
+
+		    // Soft deactivate
+		    salary.setActive(false);
+		    salRepo.save(salary);
+
+		    return "Salary deactivated successfully";
+
+	}
+
+	
 }
+

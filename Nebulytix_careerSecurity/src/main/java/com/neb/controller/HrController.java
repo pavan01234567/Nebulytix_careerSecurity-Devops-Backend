@@ -35,6 +35,8 @@ import com.neb.dto.ResponseMessage;
 import com.neb.dto.UpdateEmployeeRequestDto;
 import com.neb.dto.UpdatePasswordRequestDto;
 import com.neb.dto.employee.EmployeeProfileDto;
+import com.neb.dto.salary.SalaryRequestDto;
+import com.neb.dto.salary.SalaryResponseDto;
 import com.neb.dto.user.RegisterNewUerRequest;
 import com.neb.dto.user.UserDto;
 import com.neb.entity.JobApplication;
@@ -80,39 +82,39 @@ public class HrController {
             new ResponseMessage(200, "OK", "User created successfully")
         );
     }
+    
+   //====================== salary part ==============================
+    @PostMapping("/add/salary")
+    public ResponseEntity<ResponseMessage<SalaryResponseDto>> createSalary(@RequestBody SalaryRequestDto requestDto) {
+    	SalaryResponseDto addSalary = service.addSalary(requestDto);
+    	return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "salary added successfully", addSalary));
+    }
+    
+    @GetMapping("/active/{employeeId}")
+    public ResponseEntity<ResponseMessage<SalaryResponseDto>> getActiveSalary(@PathVariable Long employeeId) {
+         SalaryResponseDto activeSalary = service.getActiveSalary(employeeId);
+         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "fetch the salary successfully", activeSalary));
+    }
+    
+    @GetMapping("listsal/active")
+    public ResponseEntity<ResponseMessage<List<SalaryResponseDto>>> getActiveSalaries() {
+              List<SalaryResponseDto> allActiveSalaries = service.getAllActiveSalaries();
+     return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "fetch the All Active salary successfully", allActiveSalaries));
+     }
+    
+    @PutMapping("updateSal/{salaryId}")
+    public ResponseEntity<ResponseMessage<SalaryResponseDto>> updateSalary(@PathVariable Long salaryId,@RequestBody SalaryRequestDto dto) {
+         SalaryResponseDto updateSalary = service.updateSalary(salaryId, dto);
+         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "salary updated successfully", updateSalary));
+    }
+    
+    @DeleteMapping("deleteSal/{salaryId}")
+    public ResponseEntity<ResponseMessage<String>> deleteSalary(@PathVariable Long salaryId) {
 
-//    @GetMapping("/getEmpList")
-//    public ResponseEntity<ResponseMessage<List<EmployeeDetailsResponseDto>>> getEmployeeList() {
-//        List<EmployeeDetailsResponseDto> employeeList = service.getEmployeeList();
-//        return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "All Employee fetched successfully", employeeList));
-//    }
-    
-//    @PostMapping("/addEmployee")
-//	public ResponseEntity<String> addEmployee(@RequestBody RegisterNewUerRequest addEmpReq){
-//		
-//		UserDto userDto= addEmpReq.getUserDto();
-//		
-//		Set<Role> roles = new HashSet<Role>();
-//		roles.add(Role.ROLE_EMPLOYEE);
-//		
-//		Long id = usersService.saveUser(userDto,roles);
-//		
-//		if(id!=null) {
-//			Boolean empStatus = employeeService.addEmployee(addEmpReq.getEmpReq(), id,"EMPLOYEE");
-//			
-//			if (empStatus) {
-//		        return ResponseEntity.status(HttpStatus.CREATED).body("Employee Created Successfully");
-//		    }	
-//			else {
-//				usersService.deleteUser(id);
-//				return new ResponseEntity<>("failed", HttpStatus.INTERNAL_SERVER_ERROR);
-//			}
-//		}
-//		return new ResponseEntity<>("failed", HttpStatus.INTERNAL_SERVER_ERROR);
-//	}
-//	
-    
-   
+        String msg = service.deleteSalary(salaryId);
+        return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee deleted successfully", msg));
+         
+    }
     @GetMapping("/getEmp/{id}")
     public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> getEmployee(@PathVariable Long id) {
         EmployeeDetailsResponseDto employee = service.getEmployee(id);
@@ -125,6 +127,7 @@ public class HrController {
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee deleted successfully", deleteById));
     }
 
+    //========================= paySlip ======================
     @GetMapping("/payslip/{id}/download")
     public ResponseEntity<byte[]> download(@PathVariable Long id) throws Exception {
         byte[] pdf = service.downloadPayslip(id);
@@ -158,7 +161,8 @@ public class HrController {
         EmployeeDetailsResponseDto updatedEmp = service.updateEmployee(id, updateReq);
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee details updated successfully", updatedEmp));
     }
-
+    
+    //=============================== jobs ===============================
     @PostMapping("/addJob")
     public ResponseEntity<ResponseMessage<JobDetailsDto>> addJob(@RequestBody AddJobRequestDto jobRequest) {
         JobDetailsDto jobRes = service.addJob(jobRequest);
@@ -170,7 +174,8 @@ public class HrController {
         List<JobDetailsDto> allJobs = service.getAllJobs();
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "All jobs fetched successfully", allJobs));
     }
-
+   
+    //============================ Daily Report ==========================
     @PostMapping("/dailyReport/generate")
     public ResponseEntity<ResponseMessage<String>> generateDailyReport() {
         LocalDate d = LocalDate.now();
@@ -213,7 +218,8 @@ public class HrController {
             new ResponseMessage<>(200, "OK", "Emails sent to all shortlisted applicants and status updated", updatedApplicants)
         );
     }
-
+  
+    //========================= emails ===========================
     // Send email to all rejected applicants
     @PostMapping("/job/sendRejectedEmails")
     public ResponseEntity<ResponseMessage<List<JobApplication>>> sendRejectedEmails(@RequestBody EmailRequestDto emailRequest) {
@@ -237,6 +243,7 @@ public class HrController {
         return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Rejected email sent and status updated to TERMINATED", null));
     }
 
+    //========================== Delete ==========================
     @DeleteMapping("/job/delete/{jobId}")
     public ResponseEntity<ResponseMessage<String>> deleteJob(@PathVariable Long jobId) {
         String result = service.deleteJob(jobId);

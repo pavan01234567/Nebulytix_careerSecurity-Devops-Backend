@@ -108,14 +108,7 @@ public class AdminController {
         );
     }
 	
-	//get employee list
-//	@GetMapping("/getEmpList")
-//	public ResponseEntity<ResponseMessage<List<EmployeeDetailsResponseDto>>> getEmployeeList(){
-//		
-//		List<EmployeeDetailsResponseDto> employeeList = adminService.getEmployeeList();
-//		
-//		return ResponseEntity.ok(new ResponseMessage<List<EmployeeDetailsResponseDto>>(HttpStatus.OK.value(), HttpStatus.OK.name(), "All Employee fetched successfully", employeeList));
-//	}
+	
 //	 @PostMapping(value = "/work/add", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
 //	 
 //	    public ResponseEntity<ResponseMessage<String>> addWork(
@@ -151,7 +144,7 @@ public class AdminController {
 	    	return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Admin deleted successfully", deleteRes));
 	    }
 	    // delete hr by id
-	    @DeleteMapping("/delete/hr/{id}")//http://localhost:5054/api/admin/delete/hr/3
+	    @DeleteMapping("/delete/hr/{id}")
 	    public ResponseEntity<ResponseMessage<?>> deleteHr(@PathVariable Long id){
 	    	String deleteRes = adminService.deleteHr(id);
 	    	return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "hr deleted successfully", deleteRes));
@@ -220,8 +213,8 @@ public class AdminController {
 	        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
 	    }
 
-	 @PutMapping("/update/hr/{id}")
-	 public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> updateHrDetails(
+	   @PutMapping("/update/hr/{id}")
+	   public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> updateHrDetails(
 	         @PathVariable Long id,
 	         @RequestBody UpdateEmployeeRequestDto updateReq) {
 
@@ -237,7 +230,8 @@ public class AdminController {
 	     );
 	 } 
 	 
-	 // GET /api/employees/hr-employee
+//	    ========================== fetching part ===============================
+	   
 	    @GetMapping("fetch/admin")
 	    public ResponseEntity<ResponseMessage<List<AdminProfileDto>>> getAllAdmin() {
 	            List<AdminProfileDto> allAdmin = adminService.getOnlyAdmin();
@@ -258,29 +252,9 @@ public class AdminController {
 	    @GetMapping("fetch/hr")
 	    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getAllHr() {
 	           List<EmployeeProfileDto> allHr = adminService.getOnlyHr();
-//	        return new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee and HR fetched successfully", employees);
-	        return ResponseEntity.ok(
-	              new ResponseMessage<>(200, "OK", "Hr's fetched successfully", allHr)
-	      );
+            return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Hr's fetched successfully", allHr));
 	    }
 	    
-	 
-	    
-	    @GetMapping("/clients")
-	    public ResponseEntity<ResponseMessage<List<ClientDto>>> getClientList() {
-	        List<ClientDto> clients = adminService.getClientList();
-	        return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", "Client list fetched successfully", clients));
-	    }
-
-	    @PostMapping("/project/add")
-	    public ResponseEntity<ResponseMessage<Long>> addProject(@RequestBody AddProjectRequestDto req) {
-	        Project project = projectService.addProject(req);
-	        return ResponseEntity.ok(
-	                new ResponseMessage<>(200, "SUCCESS", "Project added successfully", project.getId())
-	        );
-	    }
-	    
-	 // GET /api/admin/fetch/employee
 	    @GetMapping("fetch/employee")
 	    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getAllEmployees() {
 	           List<EmployeeProfileDto> allEmployee = adminService.getOnlyEmployee();
@@ -296,6 +270,21 @@ public class AdminController {
 	              new ResponseMessage<>(200, "OK", "Clients fetched successfully", allClient)
 	      );
 	    }
+	    
+	    @GetMapping("/clients")
+	    public ResponseEntity<ResponseMessage<List<ClientDto>>> getClientList() {
+	        List<ClientDto> clients = adminService.getClientList();
+	        return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", "Client list fetched successfully", clients));
+	    }
+
+	    @PostMapping("/project/add")
+	    public ResponseEntity<ResponseMessage<Long>> addProject(@RequestBody AddProjectRequestDto req) {
+	        Project project = projectService.addProject(req);
+	        return ResponseEntity.ok(
+	                new ResponseMessage<>(200, "SUCCESS", "Project added successfully", project.getId()));
+	    }
+	    
+        
 	    // GET All Projects
 	    @GetMapping("/projects")
 	    @PreAuthorize("hasRole('ROLE_ADMIN')")

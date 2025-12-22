@@ -8,6 +8,8 @@ import com.neb.dto.EmployeeDetailsResponseDto;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.UpdateEmployeeRequestDto;
+import com.neb.dto.salary.SalaryRequestDto;
+import com.neb.dto.salary.SalaryResponseDto;
 import com.neb.entity.JobApplication;
 
 public interface HrService {
@@ -43,4 +45,10 @@ public interface HrService {
     void sendEmailToSingleApplicant(Long applicantId, String subject, String message);
     
     public void deletePayslip(Long id); 
+    
+    public SalaryResponseDto addSalary(SalaryRequestDto salRequestDto);
+	public SalaryResponseDto getActiveSalary(Long employeeId);
+	public List<SalaryResponseDto> getAllActiveSalaries();
+	public SalaryResponseDto updateSalary(Long salaryId, SalaryRequestDto dto);
+	public String deleteSalary(Long salaryId);
 }

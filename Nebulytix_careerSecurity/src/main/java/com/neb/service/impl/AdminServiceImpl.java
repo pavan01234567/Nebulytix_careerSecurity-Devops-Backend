@@ -234,7 +234,7 @@ public class AdminServiceImpl implements AdminService{
 	public String deleteHr(Long id) {
 		
 		Employee employee = empRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new CustomeException("Employee not found with id :"+id));
 
         // Soft delete employee
         employee.setEmpStatus("inactive");
