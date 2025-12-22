@@ -1,14 +1,11 @@
 package com.neb.service.impl;
 
-
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,7 +15,6 @@ import com.neb.dto.UpdateProjectRequestDto;
 import com.neb.dto.project.AddProjectRequestDto;
 import com.neb.entity.Client;
 import com.neb.entity.Project;
-import com.neb.entity.ProjectDocument;
 import com.neb.exception.CustomeException;
 import com.neb.exception.FileStorageException;
 import com.neb.exception.ResourceNotFoundException;
@@ -31,15 +27,18 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class ProjectServiceImpl implements ProjectService {
-@Autowired
-   private ClientRepository clientRepository;
-@Autowired
-private  ProjectRepository projectRepository;
-@Autowired
-private ProjectDocumentRepository docRepo;
 
-@Value("${file.upload-dir}")
-private String uploadDir;
+    @Autowired
+    private ClientRepository clientRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private ProjectDocumentRepository docRepo;
+
+    // ✅ CHANGED: hardcoded projects directory (NO application.properties needed)
+    private static final String PROJECTS_DIR = "projects";
 
     @Override
     public ResponseMessage<List<ProjectResponseDto>> getAllProjects() {
@@ -68,7 +67,6 @@ private String uploadDir;
         if (dto.getStatus() != null) project.setStatus(dto.getStatus());
 
         projectRepository.save(project);
-
         return new ResponseMessage<>(200, "SUCCESS", "Project updated", map(project));
     }
 
@@ -95,44 +93,42 @@ private String uploadDir;
         dto.setClientId(p.getClient().getId());
         return dto;
     }
+
     @Override
     @Transactional
     public ProjectResponseDto updateProjectStatus(Long projectId, String status) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomeException("Project not found with id: " + projectId));
 
-        project.setStatus(status); // Update status
+        project.setStatus(status);
         projectRepository.save(project);
 
         return ProjectResponseDto.fromEntity(project);
     }
-    
+
     @Override
     public List<ProjectResponseDto> getProjectsByClient(Long clientId) {
-
-        // Fetch projects by client ID, throw exception if client not found
         List<Project> projects = projectRepository.findByClientId(clientId);
 
         if (projects.isEmpty()) {
             throw new CustomeException("No projects found for client with ID: " + clientId);
         }
 
-  
         return projects.stream()
                 .map(ProjectResponseDto::fromEntity)
                 .toList();
     }
+
     @Override
     @Transactional
     public Project addProject(
             AddProjectRequestDto dto,
             MultipartFile quotation,
-            MultipartFile requirement,
-            MultipartFile contract,
-            List<MultipartFile> documents) {
+            MultipartFile requirement) {
 
         Client client = clientRepository.findById(dto.getClientId())
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found with id " + dto.getClientId()));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Client not found with id " + dto.getClientId()));
 
         Project project = new Project();
         project.setClient(client);
@@ -149,29 +145,15 @@ private String uploadDir;
         project.setProgress(0);
         project.setCreatedDate(LocalDate.now());
 
-        // Store mandatory files
+        // ✅ Files stored in projects/
         project.setQuotationPdfUrl(storeFile(quotation));
         project.setRequirementDocUrl(storeFile(requirement));
-        project.setContractPdfUrl(storeFile(contract));
 
-        Project savedProject = projectRepository.save(project);
-
-        // Store optional documents
-        if (documents != null && !documents.isEmpty()) {
-            for (MultipartFile file : documents) {
-                ProjectDocument doc = new ProjectDocument();
-                doc.setFileName(file.getOriginalFilename());
-                doc.setFileUrl(storeFile(file));
-                doc.setProject(savedProject);
-                docRepo.save(doc);
-            }
-        }
-
-        return savedProject;
+        return projectRepository.save(project);
     }
 
     /**
-     * Store a single file safely in uploadDir
+     * ✅ Store file inside projects/ directory
      */
     private String storeFile(MultipartFile file) {
         try {
@@ -179,31 +161,24 @@ private String uploadDir;
                 throw new FileStorageException("Cannot store empty file");
             }
 
-            System.out.println("Uploading file: " + file.getOriginalFilename());
-            System.out.println("Upload directory: " + uploadDir);
+            // Sanitize filename
+            String safeFileName =
+                    file.getOriginalFilename().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
 
-            // Sanitize file name: remove spaces and special characters
-            String safeFileName = file.getOriginalFilename().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+            // ✅ CHANGED: always use projects directory
+            Path projectsPath = Path.of(PROJECTS_DIR);
+            Files.createDirectories(projectsPath);
 
-            // Ensure upload directory exists
-            Path uploadPath = Path.of(uploadDir);
-            Files.createDirectories(uploadPath);
+            Path finalPath =
+                    projectsPath.resolve(System.currentTimeMillis() + "_" + safeFileName);
 
-            // Create final path with timestamp to avoid conflicts
-            Path path = uploadPath.resolve(System.currentTimeMillis() + "_" + safeFileName);
+            Files.write(finalPath, file.getBytes());
 
-            // Write file bytes
-            Files.write(path, file.getBytes());
-
-            System.out.println("File uploaded successfully: " + path.toString());
-            return path.toString();
+            return finalPath.toString();
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new FileStorageException("Failed to upload file: " + file.getOriginalFilename());
+            throw new FileStorageException(
+                    "Failed to upload file: " + file.getOriginalFilename(), e);
         }
     }
-    
-	}
-
-
+}

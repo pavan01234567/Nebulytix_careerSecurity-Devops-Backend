@@ -66,8 +66,10 @@ public class AdminController {
 	
 	@Autowired
 	private EmployeeService employeeService;
+	
 	@Autowired
 	private ProjectService projectService;
+	
 	
     @PostMapping("/create-admin")
     public ResponseEntity<ResponseMessage> createAdmin(@RequestBody UserDto dto) {
@@ -105,7 +107,7 @@ public class AdminController {
                 new ResponseMessage<>(200, "SUCCESS", "Admin profile fetched", dto)
         );
     }
-	    
+
 	    // ✅ Get all Work of employee
 	    @GetMapping("/getAllWork/{empId}")
 	    public ResponseEntity<ResponseMessage<List<WorkResponseDto>>> getAllWork(@PathVariable Long empId) {
@@ -126,7 +128,7 @@ public class AdminController {
 	    	return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Admin deleted successfully", deleteRes));
 	    }
 	    // delete hr by id
-	    @DeleteMapping("/delete/hr/{id}")//http://localhost:5054/api/admin/delete/hr/3
+	    @DeleteMapping("/delete/hr/{id}")
 	    public ResponseEntity<ResponseMessage<?>> deleteHr(@PathVariable Long id){
 	    	String deleteRes = adminService.deleteHr(id);
 	    	return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "hr deleted successfully", deleteRes));
@@ -195,8 +197,8 @@ public class AdminController {
 	        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
 	    }
 
-	 @PutMapping("/update/hr/{id}")
-	 public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> updateHrDetails(
+	   @PutMapping("/update/hr/{id}")
+	   public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> updateHrDetails(
 	         @PathVariable Long id,
 	         @RequestBody UpdateEmployeeRequestDto updateReq) {
 
@@ -212,7 +214,8 @@ public class AdminController {
 	     );
 	 } 
 	 
-	 // GET /api/employees/hr-employee
+//	    ========================== fetching part ===============================
+	   
 	    @GetMapping("fetch/admin")
 	    public ResponseEntity<ResponseMessage<List<AdminProfileDto>>> getAllAdmin() {
 	            List<AdminProfileDto> allAdmin = adminService.getOnlyAdmin();
@@ -233,12 +236,9 @@ public class AdminController {
 	    @GetMapping("fetch/hr")
 	    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getAllHr() {
 	           List<EmployeeProfileDto> allHr = adminService.getOnlyHr();
-//	        return new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee and HR fetched successfully", employees);
-	        return ResponseEntity.ok(
-	              new ResponseMessage<>(200, "OK", "Hr's fetched successfully", allHr)
-	      );
+            return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Hr's fetched successfully", allHr));
 	    }
-	   
+
 	    @GetMapping("/clients")
 	    public ResponseEntity<ResponseMessage<List<ClientDto>>> getClientList() {
 	        List<ClientDto> clients = adminService.getClientList();
@@ -255,11 +255,10 @@ public class AdminController {
 	            @RequestPart("data") AddProjectRequestDto dto,
 	            @RequestPart("quotation") MultipartFile quotation,
 	            @RequestPart("requirement") MultipartFile requirement,
-	            @RequestPart("contract") MultipartFile contract,
-	            @RequestPart(value = "documents", required = false)
-	            List<MultipartFile> documents) {
+	            @RequestPart("contract") MultipartFile contract
+	           ) {
 
-	        projectService.addProject(dto, quotation, requirement, contract, documents);
+	        projectService.addProject(dto, quotation, requirement);
 
 	        return ResponseEntity.ok(
 	                new ResponseMessage<>(
@@ -271,7 +270,7 @@ public class AdminController {
 	        );
 	    }
 
-	 // GET /api/admin/fetch/employee
+	
 	    @GetMapping("fetch/employee")
 	    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getAllEmployees() {
 	           List<EmployeeProfileDto> allEmployee = adminService.getOnlyEmployee();
@@ -287,6 +286,7 @@ public class AdminController {
 	              new ResponseMessage<>(200, "OK", "Clients fetched successfully", allClient)
 	      );
 	    }
+	    
 	    // GET All Projects
 	    @GetMapping("/projects")
 	    @PreAuthorize("hasRole('ROLE_ADMIN')")
