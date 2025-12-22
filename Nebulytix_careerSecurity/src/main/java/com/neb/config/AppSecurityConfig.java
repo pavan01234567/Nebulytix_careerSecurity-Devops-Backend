@@ -52,7 +52,14 @@ public class AppSecurityConfig {
 	        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	        .authenticationProvider(authProvider())
 	        .authorizeHttpRequests(req -> req
+	        		
 	                // allow only specific auth endpoints (login/refresh/register) publicly
+	        		.requestMatchers(
+	                        "/api/auth/forgot-password",
+	                        "/api/auth/verify-forgot-otp",
+	                        "/api/auth/reset-password",
+	                        "/api/auth/login",
+	                        "/api/auth/register" ).permitAll()
 	                .requestMatchers("/api/auth/login","/api/admin/create-admin").permitAll()
 	                .requestMatchers("/api/auth/refresh-token").permitAll()
 	                .requestMatchers("/api/auth/register").permitAll()

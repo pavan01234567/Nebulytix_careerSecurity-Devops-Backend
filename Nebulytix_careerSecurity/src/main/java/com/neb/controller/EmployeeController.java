@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.neb.dto.AddDailyReportRequestDto;
+import com.neb.dto.ApplyLeaveRequestDto;
 import com.neb.dto.EmployeeDetailsResponseDto;
 import com.neb.dto.GeneratePayslipRequest;
 import com.neb.dto.LoginRequestDto;
@@ -28,9 +29,11 @@ import com.neb.dto.ResponseMessage;
 import com.neb.dto.WorkResponseDto;
 import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.entity.Employee;
+import com.neb.entity.Leave;
 import com.neb.entity.Payslip;
 import com.neb.entity.Work;
 import com.neb.service.EmployeeService;
+import com.neb.service.LeaveService;
 
 @RestController
 @RequestMapping("/api/employee")
@@ -39,6 +42,8 @@ public class EmployeeController {
 	
 	@Autowired
 	private EmployeeService employeeService;
+	@Autowired
+	private LeaveService leaveService;
 	
 	
 	@GetMapping("/me")
@@ -156,6 +161,7 @@ public class EmployeeController {
                     ));
         }
     }
+   
 
    
   

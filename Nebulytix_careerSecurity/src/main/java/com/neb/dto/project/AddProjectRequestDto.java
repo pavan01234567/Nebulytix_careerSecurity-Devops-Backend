@@ -1,4 +1,4 @@
-package com.neb.dto;
+package com.neb.dto.project;
 
 import lombok.Data;
 import java.time.LocalDate;
@@ -19,8 +19,5 @@ public class AddProjectRequestDto {
     private String priority;
     private Double budget;
     private String riskLevel;
-
-    private String quotationPdfUrl;
-    private String requirementDocUrl;
-    private String contractPdfUrl;
+    private String tags;
 }

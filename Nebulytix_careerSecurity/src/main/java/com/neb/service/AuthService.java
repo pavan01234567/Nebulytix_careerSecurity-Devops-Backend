@@ -1,19 +1,30 @@
 package com.neb.service;
 
+import java.time.LocalDateTime;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.neb.constants.Role;
 import com.neb.dto.user.AuthResponse;
 import com.neb.dto.user.LoginRequest;
+import com.neb.entity.PasswordResetOtp;
 import com.neb.entity.RefreshToken;
 import com.neb.entity.Users;
+import com.neb.exception.EmailNotFoundException;
+import com.neb.exception.InvalidOtpException;
+import com.neb.exception.OtpAttemptsExceededException;
+import com.neb.exception.PasswordMismatchException;
+import com.neb.repo.PasswordResetOtpRepository;
 import com.neb.repo.UsersRepository;
 import com.neb.util.AuthUtils;
 
@@ -22,17 +33,28 @@ import jakarta.transaction.Transactional;
 @Service
 public class AuthService {
 
-    @Autowired
+
+	@Autowired
     private AuthenticationManager authManager;
 
     @Autowired
     private UsersRepository usersRepository;
+    @Autowired
+    private PasswordResetOtpRepository otpRepository;
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     @Autowired
     private RefreshTokenService refreshTokenService;
+    
+    @Autowired
+    private UsersRepository userRepository;
 
 
     // LOGIN --------------------------------------------------------------------
@@ -149,5 +171,79 @@ public class AuthService {
         if (user.getRoles().contains(Role.ROLE_CLIENT)) return "CLIENT_DASHBOARD";
 
         return "DEFAULT_DASHBOARD";
+    }
+ // ================= FORGOT PASSWORD =================
+
+    public void sendForgotPasswordOtp(String email) {
+
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new EmailNotFoundException("Email is not registered")
+                );
+
+        // Generate OTP
+        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
+
+        PasswordResetOtp resetOtp = new PasswordResetOtp();
+        resetOtp.setEmail(email);
+        resetOtp.setOtp(otp);
+        resetOtp.setUsed(false);
+        resetOtp.setAttempts(0); // 🔥 NEW FIELD
+        resetOtp.setExpiryTime(LocalDateTime.now().plusMinutes(10));
+
+        otpRepository.save(resetOtp);
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Password Reset OTP");
+        message.setText(
+                "Your OTP is: " + otp +
+                "\nValid for 10 minutes. Do not share this OTP."
+        );
+
+        mailSender.send(message);
+    }
+
+    public void verifyForgotPasswordOtp(String email, String otp) {
+
+        PasswordResetOtp resetOtp = otpRepository
+                .findTopByEmailAndUsedFalseOrderByExpiryTimeDesc(email)
+                .orElseThrow(() ->
+                        new InvalidOtpException("OTP not found or already used")
+                );
+
+        if (resetOtp.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new InvalidOtpException("OTP expired");
+        }
+
+        if (resetOtp.getAttempts() >= 3) {
+            throw new OtpAttemptsExceededException(
+                    "You tried more than 3 times. Please try again later."
+            );
+        }
+
+        if (!resetOtp.getOtp().equals(otp)) {
+            resetOtp.setAttempts(resetOtp.getAttempts() + 1);
+            otpRepository.save(resetOtp);
+            throw new InvalidOtpException("Invalid OTP");
+        }
+
+        resetOtp.setUsed(true);
+        otpRepository.save(resetOtp);
+    }
+
+    public void resetPassword(String email, String newPassword, String confirmPassword) {
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new PasswordMismatchException("Passwords do not match");
+        }
+
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new EmailNotFoundException("Email is not registered")
+                );
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

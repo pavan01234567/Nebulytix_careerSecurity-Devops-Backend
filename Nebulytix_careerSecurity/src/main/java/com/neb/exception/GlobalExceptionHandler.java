@@ -1,5 +1,9 @@
 package com.neb.exception;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -7,6 +11,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import com.neb.dto.ResponseMessage;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -83,5 +89,50 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ResponseMessage<String>> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ResponseMessage<>(
+                        404,
+                        "FAILED",
+                        ex.getMessage(),
+                        null
+                ));
+    }
+
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ResponseMessage<String>> handleFile(FileStorageException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResponseMessage<>(
+                        400,
+                        "FAILED",
+                        ex.getMessage(),
+                        null
+                ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ResponseMessage<String>> handleGeneric(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ResponseMessage<>(
+                        500,
+                        "ERROR",
+                        "Something went wrong. Please contact support.",
+                        null
+                ));
+    }
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusiness(BusinessException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    private ResponseEntity<?> buildResponse(String message, HttpStatus status) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status.value());
+        body.put("message", message);
+        return new ResponseEntity<>(body, status);
     }
 }

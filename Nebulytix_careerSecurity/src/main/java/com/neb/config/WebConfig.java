@@ -26,6 +26,11 @@ public class WebConfig implements WebMvcConfigurer {
         registry
         .addResourceHandler("/uploads/profiles/**")
         .addResourceLocations("file:E:/NEBULYTIX TECHNOLOGIES/profile-pictures/");
+        registry
+        .addResourceHandler("/uploads/projects/**")
+        .addResourceLocations("file:D:/NEBULYTIX TECHNOLOGIES/project-documents/");
+       
+        
     }
 
     @Override

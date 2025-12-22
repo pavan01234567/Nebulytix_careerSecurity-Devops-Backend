@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.neb.constants.Role;
@@ -37,11 +39,14 @@ import com.neb.dto.UpdatePasswordRequestDto;
 import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.user.RegisterNewUerRequest;
 import com.neb.dto.user.UserDto;
+import com.neb.entity.Attendance;
 import com.neb.entity.JobApplication;
+import com.neb.entity.Leave;
 import com.neb.entity.Payslip;
 import com.neb.service.AdminService;
 import com.neb.service.EmployeeService;
 import com.neb.service.HrService;
+import com.neb.service.LeaveService;
 import com.neb.service.UsersService;
 
 @RestController
@@ -60,6 +65,8 @@ public class HrController {
     
     @Autowired
     private AdminService adminService;
+    @Autowired
+	private LeaveService leaveService;
     
     @GetMapping("/me")
     public ResponseEntity<ResponseMessage<EmployeeProfileDto>> getMyProfile() {
@@ -253,4 +260,8 @@ public class HrController {
     public ResponseEntity<ResponseMessage<String>> logout() {
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Logout successful", "Admin logged out successfully"));
     }
+    
+  
+
+
 }

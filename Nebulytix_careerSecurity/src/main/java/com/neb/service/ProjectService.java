@@ -2,14 +2,23 @@ package com.neb.service;
 
 import java.util.List;
 
-import com.neb.dto.AddProjectRequestDto;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.neb.dto.ProjectResponseDto;
 import com.neb.dto.ResponseMessage;
 import com.neb.dto.UpdateProjectRequestDto;
+import com.neb.dto.project.AddProjectRequestDto;
 import com.neb.entity.Project;
 
 public interface ProjectService {
-	Project addProject(AddProjectRequestDto dto);
+	
+	  Project addProject(
+	            AddProjectRequestDto dto,
+	            MultipartFile quotation,
+	            MultipartFile requirement,
+	            MultipartFile contract,
+	            List<MultipartFile> otherDocs
+	    );
 
     ResponseMessage<List<ProjectResponseDto>> getAllProjects();
 
@@ -19,4 +28,5 @@ public interface ProjectService {
 
     ResponseMessage<String> deleteProject(Long id);
     public ProjectResponseDto updateProjectStatus(Long projectId, String status);
+    List<ProjectResponseDto> getProjectsByClient(Long clientId);
 }

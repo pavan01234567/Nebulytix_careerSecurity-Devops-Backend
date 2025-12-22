@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.neb.dto.ForgotPasswordRequest;
+import com.neb.dto.ResetPasswordRequest;
 import com.neb.dto.ResponseMessage;
+import com.neb.dto.VerifyOtpRequest;
 import com.neb.dto.user.AuthResponse;
 import com.neb.dto.user.LoginRequest;
 import com.neb.dto.user.LoginResponse;
@@ -146,6 +149,47 @@ public class AuthController {
                 .body(new ResponseMessage<>(400, "FAILED", e.getMessage()));
         }
     }
-    
+    // ===================== FORGOT PASSWORD =====================
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ResponseMessage<String>> forgotPassword(
+            @RequestBody ForgotPasswordRequest request) {
+
+        authService.sendForgotPasswordOtp(request.getEmail());
+
+        return ResponseEntity.ok(
+            new ResponseMessage<>(200, "SUCCESS", "OTP sent to registered email")
+        );
+    }
+
+    // ====================== VERIFY OTP ======================
+    @PostMapping("/verify-forgot-otp")
+    public ResponseEntity<ResponseMessage<String>> verifyForgotOtp(
+            @RequestBody VerifyOtpRequest request) {
+
+        authService.verifyForgotPasswordOtp(
+            request.getEmail(),
+            request.getOtp()
+        );
+
+        return ResponseEntity.ok(
+            new ResponseMessage<>(200, "SUCCESS", "OTP verified successfully")
+        );
+    }
+
+    // ====================== RESET PASSWORD ======================
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseMessage<String>> resetPassword(
+            @RequestBody ResetPasswordRequest request) {
+
+        authService.resetPassword(
+            request.getEmail(),
+            request.getNewPassword(),
+            request.getConfirmPassword()
+        );
+
+        return ResponseEntity.ok(
+            new ResponseMessage<>(200, "SUCCESS", "Password reset successful")
+        );
+    }
     
 }
