@@ -134,6 +134,12 @@ public class AdminController {
 	    	return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "hr deleted successfully", deleteRes));
 	    }
 	    
+	    @DeleteMapping("/delete/client/{id}")
+	    public ResponseEntity<ResponseMessage<?>> deleteClient(@PathVariable Long id){
+	    	String deleteRes = adminService.deleteClient(id);
+	    	return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Client deleted successfully", deleteRes));
+	    }
+	    
 	    @GetMapping("/getEmp/{id}")
 		public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> getEmployee(@PathVariable Long id){
 			

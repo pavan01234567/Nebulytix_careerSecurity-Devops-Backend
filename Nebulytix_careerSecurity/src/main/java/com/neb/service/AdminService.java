@@ -41,6 +41,8 @@ public interface AdminService {
 
     
     public String deleteHr(Long id);
+    
+    public String deleteClient(Long id);
   
     public byte[] generateDailyReport(LocalDate date)throws Exception;
     public EmployeeDetailsResponseDto updateHrDetails(Long id, UpdateEmployeeRequestDto dto);

@@ -254,6 +254,28 @@ public class AdminServiceImpl implements AdminService{
 	}
 
 	@Override
+	public String deleteClient(Long id) {
+		
+		Client client = clientRepo.findById(id)
+				.orElseThrow(() -> new CustomeException("Client not found with id :"+id));
+		
+		// 2. Mark client inactive
+        client.setStatus("inactive");
+
+        // 3. Disable related user
+        Users user = client.getUser();
+        if (user != null) {
+            user.setEnabled(false);
+            usersRepository.save(user); //  updates users table
+        }
+
+        // 4. Save client
+        clientRepo.save(client);
+        
+        return "Client and user account deactivated successfully";
+	}
+	
+	@Override
 	public EmployeeDetailsResponseDto getEmployee(Long id) {
 
 		Employee emp = empRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("Employee not found wuith id :"+id));
