@@ -15,7 +15,8 @@ public interface ProjectService {
 	  Project addProject(
 	            AddProjectRequestDto dto,
 	            MultipartFile quotation,
-	            MultipartFile requirement
+	            MultipartFile requirement,
+	            MultipartFile contract
 	            
 	    );
 
@@ -28,4 +29,8 @@ public interface ProjectService {
     ResponseMessage<String> deleteProject(Long id);
     public ProjectResponseDto updateProjectStatus(Long projectId, String status);
     List<ProjectResponseDto> getProjectsByClient(Long clientId);
+    
+   public  ProjectResponseDto addEmployeeToProject(Long projectId, Long employeeId);
+
+   void removeEmployeeFromProject(Long projectId, Long employeeId);
 }
