@@ -1,6 +1,8 @@
 package com.neb.controller;
 
 import java.time.LocalDate;
+import java.time.Month;
+import java.util.HashSet;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,26 +21,47 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
+import com.neb.constants.Role;
+import com.neb.dto.AddEmployeeRequestDto;
+import com.neb.dto.AddEmployeeResponseDto;
 import com.neb.dto.AddJobRequestDto;
 import com.neb.dto.EmailRequestDto;
+import com.neb.dto.EmployeeBankDetailsRequest;
+import com.neb.dto.EmployeeBankDetailsResponse;
 import com.neb.dto.EmployeeDetailsResponseDto;
+import com.neb.dto.EmployeeLeaveDTO;
+import com.neb.dto.EmployeeMonthlyReportDTO;
 import com.neb.dto.GeneratePayslipRequest;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
+import com.neb.dto.ResponseDTO;
 import com.neb.dto.ResponseMessage;
+import com.neb.dto.UpdateEmployeeRequestDto;
+import com.neb.dto.UpdatePasswordRequestDto;
+
 import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.employee.UpdateEmployeeRequestDto;
 import com.neb.dto.employee.UpdateEmployeeResponseDto;
 import com.neb.dto.salary.SalaryRequestDto;
 import com.neb.dto.salary.SalaryResponseDto;
 import com.neb.dto.user.RegisterNewUerRequest;
+import com.neb.dto.user.UserDto;
+
+import com.neb.entity.EmployeeBankDetails;
+import com.neb.entity.JobApplication;
+
 import com.neb.entity.JobApplication;
 import com.neb.entity.Payslip;
+import com.neb.repo.EmployeeLeaveType;
 import com.neb.service.AdminService;
+
 import com.neb.service.EmployeeService;
 import com.neb.service.HrService;
-import com.neb.service.LeaveService;
+
 import com.neb.service.UsersService;
+import com.neb.util.ApprovalStatus;
+
 
 @RestController
 @RequestMapping("/api/hr")
@@ -56,8 +79,7 @@ public class HrController {
     
     @Autowired
     private AdminService adminService;
-    @Autowired
-	private LeaveService leaveService;
+    
     
     @GetMapping("/me")
     public ResponseEntity<ResponseMessage<EmployeeProfileDto>> getMyProfile() {
@@ -257,8 +279,89 @@ public class HrController {
     public ResponseEntity<ResponseMessage<String>> logout() {
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Logout successful", "Admin logged out successfully"));
     }
-    
-  
+    @PutMapping("/employee/{id}/bank-details")
+    public ResponseEntity<ResponseMessage<EmployeeBankDetailsResponse>> updateBankDetails(
+            @PathVariable Long id,
+            @RequestBody EmployeeBankDetailsRequest request) {
 
+        EmployeeBankDetailsResponse response =
+                service.addOrUpdateBankDetails(id, request);
+
+        return ResponseEntity.ok(
+                new ResponseMessage<>(200, "OK",
+                        "Bank details added/updated successfully", response)
+        );
+    }
+
+
+    @GetMapping("/pendingleaves/{status}")//APPROVED PENDING REJECTED
+	public ResponseEntity<ResponseDTO<List<EmployeeLeaveDTO>>> filterLeaves(@PathVariable ApprovalStatus status){
+		List<EmployeeLeaveDTO> pendingLeaves = service.leaves(status);
+		
+		ResponseDTO<List<EmployeeLeaveDTO>> responseDto = new ResponseDTO<List<EmployeeLeaveDTO>>("Pending Leaves Retrieved Successfully",pendingLeaves);
+		
+		return new ResponseEntity<ResponseDTO<List<EmployeeLeaveDTO>>>(responseDto,HttpStatus.OK);
+		
+	}
+	
+	/**
+	 * 
+	 * @param leaveId
+	 * @param type
+	 * @param status
+	 * @return
+	 */
+
+	@PostMapping("/approval/{leaveId}/{status}")
+	public ResponseEntity<ResponseDTO<String>> approvalOrRejectLeaves(@PathVariable Long leaveId,EmployeeLeaveType type,@PathVariable ApprovalStatus status){
+		EmployeeLeaveDTO approvalOrReject = service.approvalOrReject(leaveId,status);
+		ResponseDTO<String> approvalStatusRes = new ResponseDTO<>(approvalOrReject.getLeaveStatus().toString(),"Updated Sucessfully");
+		
+		return new ResponseEntity<ResponseDTO<String>>(approvalStatusRes,HttpStatus.OK);
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	@PostMapping("/report/monthly/attendencereport")
+	public ResponseEntity<ResponseDTO<List<EmployeeMonthlyReportDTO>>> getMonthlyReport() {
+
+	   
+	            List<EmployeeMonthlyReportDTO> generatedMontlyReport = service.generateMontlyReport();
+
+	    return ResponseEntity.ok(
+	            new ResponseDTO<>("Monthly report generated Successfully", generatedMontlyReport)
+	    );
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	
+	@GetMapping("/leaves/today")
+	public ResponseEntity<ResponseDTO<List<EmployeeLeaveDTO>>> employeeOnLeavesToday() {
+
+	    List<EmployeeLeaveDTO> leaves = service.employeeOnLeave();
+
+	    ResponseDTO<List<EmployeeLeaveDTO>> response =
+	            new ResponseDTO<>("Employees on leave today Fetched Succesfully", leaves);
+
+	    return ResponseEntity.ok(response);
+	}
+	/**
+	 * 
+	 * @param id
+	 * @param year
+	 * @param month
+	 * @return
+	 */
+	@GetMapping("/employeereportfor/{id}/{year}/{month}")
+	public ResponseEntity<ResponseDTO<EmployeeMonthlyReportDTO>> empReportOfYearAndMonth(@PathVariable Long id,@PathVariable Integer year,@PathVariable Integer month){
+		EmployeeMonthlyReportDTO monthlyReportOfEmployee = service.getMonthlyReportOfEmployee(id, year, month);
+		
+		ResponseDTO<EmployeeMonthlyReportDTO> reportRes = new ResponseDTO<EmployeeMonthlyReportDTO>("Monthly Report Fetched Succesfully for Year"+year+" and month "+Month.of(month),monthlyReportOfEmployee);
+		return new ResponseEntity<ResponseDTO<EmployeeMonthlyReportDTO>>(reportRes,HttpStatus.OK);
+	}
 
 }

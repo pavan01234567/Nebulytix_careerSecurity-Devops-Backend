@@ -1,36 +1,33 @@
 package com.neb.entity;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Table(name = "employee_bank_details")
-@Data
+@Getter
+@Setter
 public class EmployeeBankDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // One Employee -> One Bank details
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employee;
-
     private String bankAccountNumber;
     private String ifscCode;
     private String bankName;
-
     private String pfNumber;
     private String panNumber;
     private String uanNumber;
     private String epsNumber;
     private String esiNumber;
+
+    @OneToOne
+    @JoinColumn(name = "employee_id", unique = true)
+    private Employee employee;
 }

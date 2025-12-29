@@ -3,15 +3,22 @@ package com.neb.service;
 import java.time.LocalDate;
 import java.util.List;
 
+
 import com.neb.dto.AddJobRequestDto;
+import com.neb.dto.EmployeeBankDetailsRequest;
+import com.neb.dto.EmployeeBankDetailsResponse;
 import com.neb.dto.EmployeeDetailsResponseDto;
+import com.neb.dto.EmployeeLeaveDTO;
+import com.neb.dto.EmployeeMonthlyReportDTO;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.employee.UpdateEmployeeRequestDto;
 import com.neb.dto.employee.UpdateEmployeeResponseDto;
 import com.neb.dto.salary.SalaryRequestDto;
 import com.neb.dto.salary.SalaryResponseDto;
+import com.neb.entity.EmployeeBankDetails;
 import com.neb.entity.JobApplication;
+import com.neb.util.ApprovalStatus;
 
 public interface HrService {
    
@@ -52,4 +59,15 @@ public interface HrService {
 	public List<SalaryResponseDto> getAllActiveSalaries();
 	public SalaryResponseDto updateSalary(Long salaryId, SalaryRequestDto dto);
 	public String deleteSalary(Long salaryId);
+	 EmployeeBankDetailsResponse addOrUpdateBankDetails(
+	            Long employeeId,
+	            EmployeeBankDetailsRequest request
+	    );
+	 public List<EmployeeLeaveDTO> leaves(ApprovalStatus status);
+	 public EmployeeLeaveDTO approvalOrReject(Long leaveId, ApprovalStatus status) ;
+	 public List<EmployeeMonthlyReportDTO> generateMontlyReport();
+//	 private Boolean reportAlreadyExists(Employee employee, int year, int month) ;
+	 public EmployeeMonthlyReportDTO getMonthlyReportOfEmployee(Long employeeId, Integer year, Integer month);
+	 public List<EmployeeLeaveDTO> employeeOnLeave();
+
 }

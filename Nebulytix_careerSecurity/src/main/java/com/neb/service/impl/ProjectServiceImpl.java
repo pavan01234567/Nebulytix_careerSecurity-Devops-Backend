@@ -136,6 +136,7 @@ public class ProjectServiceImpl implements ProjectService {
     public Project addProject(
             AddProjectRequestDto dto,
             MultipartFile quotation,
+            MultipartFile requirement,MultipartFile contract) {
             MultipartFile requirement,
             MultipartFile contract) {
 
@@ -161,6 +162,8 @@ public class ProjectServiceImpl implements ProjectService {
         // ✅ Files stored in projects/
         project.setQuotationPdfUrl(storeFile(quotation));
         project.setRequirementDocUrl(storeFile(requirement));
+        
+        project.setRequirementDocUrl(storeFile(contract));
         project.setContractPdfUrl(storeFile(contract));
 
         return projectRepository.save(project);

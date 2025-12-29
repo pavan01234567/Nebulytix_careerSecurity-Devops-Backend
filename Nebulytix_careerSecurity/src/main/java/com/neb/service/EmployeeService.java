@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+
 import com.neb.dto.*;
 import com.neb.dto.employee.AddEmployeeRequest;
 import com.neb.dto.employee.EmployeeProfileDto;
@@ -38,6 +39,16 @@ public interface EmployeeService {
     
     boolean deleteProfilePicture(Long employeeId);
 	public UpdateEmployeeResponseDto updateEmployee(Long employeeId, UpdateEmployeeRequestDto requestDto);
+    
+    EmployeeDTO login(Long employeeId);
+
+
+    EmployeeDTO logout(Long employeeId);
+    
+//    public String applyLeave(EmployeeLeaveDTO empLeaveDto);
+    public EmployeeLeaveDTO applyLeave(EmployeeLeaveDTO empLeaveDto);
+    public EmployeeLeaveDTO applyWFH(EmployeeLeaveDTO wfh);
+   
     
     
 

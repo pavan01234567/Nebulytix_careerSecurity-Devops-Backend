@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,7 +16,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.neb.dto.AddJobRequestDto;
+import com.neb.dto.EmployeeBankDetailsRequest;
+import com.neb.dto.EmployeeBankDetailsResponse;
 import com.neb.dto.EmployeeDetailsResponseDto;
+import com.neb.dto.EmployeeLeaveDTO;
+import com.neb.dto.EmployeeMonthlyReportDTO;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.employee.UpdateEmployeeRequestDto;
@@ -24,6 +29,10 @@ import com.neb.dto.salary.SalaryRequestDto;
 import com.neb.dto.salary.SalaryResponseDto;
 import com.neb.entity.DailyReport;
 import com.neb.entity.Employee;
+import com.neb.entity.EmployeeBankDetails;
+import com.neb.entity.EmployeeLeaveBalance;
+import com.neb.entity.EmployeeLeaves;
+import com.neb.entity.EmployeeMonthlyReport;
 import com.neb.entity.EmployeeSalary;
 import com.neb.entity.Job;
 import com.neb.entity.JobApplication;
@@ -34,6 +43,12 @@ import com.neb.exception.EmployeeNotFoundException;
 import com.neb.exception.NoActiveSalaryException;
 import com.neb.exception.SalaryNotFoundException;
 import com.neb.repo.DailyReportRepository;
+import com.neb.repo.EmployeeBankDetailsRepository;
+import com.neb.repo.EmployeeLeaveBalanceRepo;
+import com.neb.repo.EmployeeLeaveRepository;
+//import com.neb.repo.EmployeeLeaveType;
+import com.neb.repo.EmployeeLoginDetailsRepo;
+import com.neb.repo.EmployeeMontlyReportRepo;
 import com.neb.repo.EmployeeRepository;
 import com.neb.repo.EmployeeSalaryRepository;
 import com.neb.repo.JobApplicationRepository;
@@ -42,6 +57,10 @@ import com.neb.repo.PayslipRepository;
 import com.neb.repo.UsersRepository;
 import com.neb.service.EmailService;
 import com.neb.service.HrService;
+import com.neb.util.ApprovalStatus;
+import com.neb.util.EmployeeDayStatus;
+import com.neb.util.EmployeeDayStatus;
+import com.neb.util.EmployeeLeaveType;
 import com.neb.util.ReportGeneratorPdf;
 
 import jakarta.transaction.Transactional;
@@ -51,6 +70,13 @@ public class HrServiceImpl implements HrService {
 
     @Autowired
     private EmployeeRepository empRepo;
+    @Autowired
+	private EmployeeLeaveBalanceRepo empLeaveBlnceRepo;
+	@Autowired
+	private EmployeeMontlyReportRepo employeeMonthlyReportRepo;
+
+	@Autowired
+	private EmployeeLoginDetailsRepo empLoginRepo;
 
     @Autowired
     private EmployeeSalaryRepository salRepo;
@@ -75,6 +101,10 @@ public class HrServiceImpl implements HrService {
     
     @Autowired 
     private UsersRepository usersRepository;
+    @Autowired
+    private EmployeeBankDetailsRepository bankRepo;
+    @Autowired
+    private EmployeeLeaveRepository empLeavesRepo;
 
     @Value("${daily-report.folder-path}")
     private String dailyReportFolderPath;
@@ -361,7 +391,209 @@ public class HrServiceImpl implements HrService {
 		    return "Salary deactivated successfully";
 
 	}
+	 @Override
+	    public EmployeeBankDetailsResponse addOrUpdateBankDetails(
+	            Long employeeId,
+	            EmployeeBankDetailsRequest request) {
 
+	        Employee employee = empRepo.findById(employeeId)
+	                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+	        EmployeeBankDetails bankDetails = bankRepo
+	                .findByEmployeeId(employeeId)
+	                .orElse(new EmployeeBankDetails());
+
+	        bankDetails.setEmployee(employee);
+	        bankDetails.setBankAccountNumber(request.getBankAccountNumber());
+	        bankDetails.setIfscCode(request.getIfscCode());
+	        bankDetails.setBankName(request.getBankName());
+	        bankDetails.setPfNumber(request.getPfNumber());
+	        bankDetails.setPanNumber(request.getPanNumber());
+	        bankDetails.setUanNumber(request.getUanNumber());
+	        bankDetails.setEpsNumber(request.getEpsNumber());
+	        bankDetails.setEsiNumber(request.getEsiNumber());
+
+	        EmployeeBankDetails saved = bankRepo.save(bankDetails);
+
+	        return new EmployeeBankDetailsResponse(
+	                employee.getId(),
+	                saved.getBankAccountNumber(),
+	                saved.getIfscCode(),
+	                saved.getBankName(),
+	                saved.getPfNumber(),
+	                saved.getPanNumber(),
+	                saved.getUanNumber(),
+	                saved.getEpsNumber(),
+	                saved.getEsiNumber()
+	        );
+	    }
+
+	 public List<EmployeeLeaveDTO> leaves(ApprovalStatus status) {
+
+			List<EmployeeLeaves> pendingLeaves = empLeavesRepo.findByLeaveStatus(status);
+
+			List<EmployeeLeaveDTO> employeeLeavePendingDto = pendingLeaves.stream().map(pending -> {
+				EmployeeLeaveDTO leaveDto = new EmployeeLeaveDTO();
+				leaveDto.setEmployeeId(pending.getEmployee().getId());
+				leaveDto.setStart(pending.getStartDate());
+				leaveDto.setEnd(pending.getEndDate());
+				leaveDto.setLeaveType(pending.getLeaveType());
+				leaveDto.setReason(pending.getReason());
+				leaveDto.setTotalDays(pending.getTotalDays());
+				leaveDto.setLeaveStatus(pending.getLeaveStatus());
+				leaveDto.setId(pending.getId());
+
+				return leaveDto;
+			}).toList();
+
+			return employeeLeavePendingDto;
+		}
+
+		@Transactional
+		public EmployeeLeaveDTO approvalOrReject(Long leaveId, ApprovalStatus status) {
+
+		    EmployeeLeaves leave = empLeavesRepo.findById(leaveId)
+		            .orElseThrow(() -> new RuntimeException("Invalid Leave Id"));
+
+		    if (leave.getLeaveStatus() != ApprovalStatus.PENDING) {
+		        throw new RuntimeException("Leave already processed");
+		    }
+
+		    if (status == ApprovalStatus.APPROVED) {
+
+		        EmployeeLeaveBalance balance =
+		                empLeaveBlnceRepo
+		                        .findByEmployeeAndLeaveTypeAndCurrentYear(
+		                                leave.getEmployee(),	
+		                                leave.getLeaveType(),   // 🔥 use leave's type
+		                                LocalDate.now().getYear()
+		                        )
+		                        .orElseThrow(() ->
+		                                new RuntimeException("Leave balance not found"));
+
+		        long usedAfterApproval = balance.getUsed() + leave.getTotalDays();
+		        long remaining = balance.getTotalAllowed() - usedAfterApproval;
+
+		        if (remaining < 0) {
+		            throw new RuntimeException("Insufficient leave balance");
+		        }
+
+		        balance.setUsed(usedAfterApproval);
+		        balance.setRemaining(remaining);
+
+		        empLeaveBlnceRepo.save(balance);
+		    }
+
+		    leave.setLeaveStatus(status);
+		    EmployeeLeaves savedLeave = empLeavesRepo.save(leave);
+
+		    return new EmployeeLeaveDTO(
+		            savedLeave.getEmployee().getId(),
+		            savedLeave.getId(),
+		            savedLeave.getLeaveType(),
+		            savedLeave.getStartDate(),
+		            savedLeave.getEndDate(),
+		            savedLeave.getReason(),
+		            savedLeave.getTotalDays(),
+		            savedLeave.getLeaveStatus()
+		    );
+		}
+
+		@Transactional
+		public List<EmployeeMonthlyReportDTO> generateMontlyReport() {
+			List<Employee> findAllEmployees = empRepo.findAll();
+			
+			List<EmployeeMonthlyReportDTO> collect = findAllEmployees.stream().filter(emp -> !reportAlreadyExists(emp, LocalDate.now().getYear(), LocalDate.now().getMonthValue())).map(emp->{
+				
+			
+				long presentDaysCount = empLoginRepo.findByEmployeeAndDayStatus(emp,EmployeeDayStatus.PRESENT.toString()).stream().count();
+
+				long halfDayCount = empLoginRepo.findByEmployeeAndDayStatus(emp,EmployeeDayStatus.HALFDAY.toString()).stream().count();
+
+				long casualLeaveCount = empLeavesRepo
+						.findByEmployeeAndLeaveTypeAndLeaveStatus(emp, EmployeeLeaveType.CASUAL, ApprovalStatus.APPROVED)
+						.stream().count();
+				long earnedLeaveCount = empLeavesRepo
+						.findByEmployeeAndLeaveTypeAndLeaveStatus(emp, EmployeeLeaveType.EARNED, ApprovalStatus.APPROVED)
+						.stream().count();
+				long sickLeaveCount = empLeavesRepo
+						.findByEmployeeAndLeaveTypeAndLeaveStatus(emp, EmployeeLeaveType.SICK, ApprovalStatus.APPROVED).stream()
+						.count();
+				long wfhCount = empLeavesRepo
+						.findByEmployeeAndLeaveTypeAndLeaveStatus(emp, EmployeeLeaveType.WFH, ApprovalStatus.APPROVED).stream()
+						.count();
+				long compOffLeaveCount = empLeavesRepo
+						.findByEmployeeAndLeaveTypeAndLeaveStatus(emp, EmployeeLeaveType.COMPOFF, ApprovalStatus.APPROVED)
+						.stream().count();
+				long absentCount = empLoginRepo.findByEmployeeAndDayStatus(emp,EmployeeDayStatus.ABSENT.toString()).stream().count();
+
+				long totalWorkingDays = YearMonth.of(LocalDate.now().getYear(), LocalDate.now().getMonthValue()).lengthOfMonth();
+				Double halfDayCountTotal = (halfDayCount)/2.0;
+				Long totalLeavesCount= casualLeaveCount+earnedLeaveCount+sickLeaveCount+compOffLeaveCount;
+				Double totalDaysCount = totalLeavesCount+halfDayCountTotal+wfhCount+presentDaysCount;
+				
+				
+				EmployeeMonthlyReport empMonthlyReport = new EmployeeMonthlyReport();
+				empMonthlyReport.setAbsentDays(absentCount);
+				empMonthlyReport.setCurrentMonth(LocalDate.now().getMonth().getValue());
+				empMonthlyReport.setCurrentYear(LocalDate.now().getYear());
+				empMonthlyReport.setEmployee(emp);
+				empMonthlyReport.setLeavesApplied(totalLeavesCount);
+				empMonthlyReport.setPresentDays(totalDaysCount);
+				empMonthlyReport.setTotalWorkingDays(totalWorkingDays);
+				empMonthlyReport.setWfhDays(wfhCount);
+				
+				EmployeeMonthlyReport empMonthlySavedData = employeeMonthlyReportRepo.save(empMonthlyReport);
+				EmployeeMonthlyReportDTO empReportDtoRes = new EmployeeMonthlyReportDTO(empMonthlySavedData);
+				return empReportDtoRes;
+			}).collect(Collectors.toList());
+			return collect;
+		}
+		//helper method to tell weather the report exist or not for the employee
+		private Boolean reportAlreadyExists(Employee employee, int year, int month) {
+
+		    // check duplicate
+		    boolean present = employeeMonthlyReportRepo
+		        .findByEmployeeAndCurrentYearAndCurrentMonth(employee, year, month)
+		        .isPresent();
+		    return present;
+		}
+		
+		//to Fetch the Report generated of the Existing employee 
+		public EmployeeMonthlyReportDTO getMonthlyReportOfEmployee(Long id, Integer year, Integer month) {
+			EmployeeMonthlyReport empMonthReport = employeeMonthlyReportRepo.findByIdAndCurrentYearAndCurrentMonth(id,year,month)
+			.orElseThrow(()-> new RuntimeException("Employee Report Not Found"));
+			
+			EmployeeMonthlyReportDTO empMonthReportResDto = new EmployeeMonthlyReportDTO(empMonthReport);
+			
+			
+			return empMonthReportResDto;
+		}
+		
+		public List<EmployeeLeaveDTO> employeeOnLeave() {
+		    List<EmployeeLeaves> empOnLeavesToday = empLeavesRepo
+		        .findByAppliedDateAndCurrentYearAndCurrentMonth(
+		            LocalDate.now(),
+		            LocalDate.now().getYear(),
+		            LocalDate.now().getMonthValue()
+		        );
+
+		    return empOnLeavesToday.stream().map(emp -> {
+		        EmployeeLeaveDTO leaveResDto = new EmployeeLeaveDTO();
+		        leaveResDto.setId(emp.getId());
+		        leaveResDto.setEmployeeId(emp.getEmployee().getId());
+		        leaveResDto.setLeaveType(emp.getLeaveType());
+		        leaveResDto.setStart(emp.getStartDate());
+		        leaveResDto.setEnd(emp.getEndDate());
+		        leaveResDto.setReason(emp.getReason());
+		        leaveResDto.setTotalDays(emp.getTotalDays());
+		        leaveResDto.setLeaveStatus(emp.getLeaveStatus());
+		        return leaveResDto;
+		    }).toList();
+		}
+
+
+	
 	
 }
 
