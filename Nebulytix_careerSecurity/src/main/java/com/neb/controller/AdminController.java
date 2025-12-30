@@ -248,14 +248,23 @@ public class AdminController {
 	           System.out.println("hr => "+allHr);
             return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Hr's fetched successfully", allHr));
 	    }
-
-	    @GetMapping("/clients")
-	    public ResponseEntity<ResponseMessage<List<ClientDto>>> getClientList() {
-	        List<ClientDto> clients = adminService.getClientList();
-	        return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", "Client list fetched successfully", clients));
+	    
+	    @GetMapping("fetch/employee")
+	    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getAllEmployees() {
+	           List<EmployeeProfileDto> allEmployee = adminService.getOnlyEmployee();
+	          return ResponseEntity.ok(
+	              new ResponseMessage<>(200, "OK", "Employees fetched successfully", allEmployee)
+	      );
 	    }
-
-
+	    
+	    @GetMapping("fetch/clients")
+	    public ResponseEntity<ResponseMessage<List<ClientProfileDto>>> getAllClients() {
+	          List<ClientProfileDto> allClient = adminService.getOnlyClient();
+	          return ResponseEntity.ok(
+	              new ResponseMessage<>(200, "OK", "Clients fetched successfully", allClient)
+	      );
+	    }
+	    
 	    @PostMapping(
 	            value = "/project/add",
 	            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -278,24 +287,7 @@ public class AdminController {
 	                        null
 	                )
 	        );
-	    }
-
-	
-	    @GetMapping("fetch/employee")
-	    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getAllEmployees() {
-	           List<EmployeeProfileDto> allEmployee = adminService.getOnlyEmployee();
-	          return ResponseEntity.ok(
-	              new ResponseMessage<>(200, "OK", "Employees fetched successfully", allEmployee)
-	      );
-	    }
-	    
-	    @GetMapping("fetch/clients")
-	    public ResponseEntity<ResponseMessage<List<ClientProfileDto>>> getAllClients() {
-	          List<ClientProfileDto> allClient = adminService.getOnlyClient();
-	          return ResponseEntity.ok(
-	              new ResponseMessage<>(200, "OK", "Clients fetched successfully", allClient)
-	      );
-	    }
+	    } 
 	    
 	    // GET All Projects
 	    @GetMapping("/projects")

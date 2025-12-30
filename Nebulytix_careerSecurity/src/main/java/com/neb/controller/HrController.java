@@ -2,7 +2,6 @@ package com.neb.controller;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.HashSet;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 import com.neb.constants.Role;
-import com.neb.dto.AddEmployeeRequestDto;
-import com.neb.dto.AddEmployeeResponseDto;
 import com.neb.dto.AddJobRequestDto;
 import com.neb.dto.EmailRequestDto;
 import com.neb.dto.EmployeeBankDetailsRequest;
@@ -37,8 +34,7 @@ import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.ResponseDTO;
 import com.neb.dto.ResponseMessage;
-import com.neb.dto.UpdateEmployeeRequestDto;
-import com.neb.dto.UpdatePasswordRequestDto;
+
 
 import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.employee.UpdateEmployeeRequestDto;
@@ -304,13 +300,7 @@ public class HrController {
 		
 	}
 	
-	/**
-	 * 
-	 * @param leaveId
-	 * @param type
-	 * @param status
-	 * @return
-	 */
+	
 
 	@PostMapping("/approval/{leaveId}/{status}")
 	public ResponseEntity<ResponseDTO<String>> approvalOrRejectLeaves(@PathVariable Long leaveId,EmployeeLeaveType type,@PathVariable ApprovalStatus status){
@@ -320,10 +310,7 @@ public class HrController {
 		return new ResponseEntity<ResponseDTO<String>>(approvalStatusRes,HttpStatus.OK);
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
+	
 	@PostMapping("/report/monthly/attendencereport")
 	public ResponseEntity<ResponseDTO<List<EmployeeMonthlyReportDTO>>> getMonthlyReport() {
 
@@ -334,10 +321,6 @@ public class HrController {
 	            new ResponseDTO<>("Monthly report generated Successfully", generatedMontlyReport)
 	    );
 	}
-	/**
-	 * 
-	 * @return
-	 */
 	
 	@GetMapping("/leaves/today")
 	public ResponseEntity<ResponseDTO<List<EmployeeLeaveDTO>>> employeeOnLeavesToday() {
@@ -349,13 +332,7 @@ public class HrController {
 
 	    return ResponseEntity.ok(response);
 	}
-	/**
-	 * 
-	 * @param id
-	 * @param year
-	 * @param month
-	 * @return
-	 */
+	
 	@GetMapping("/employeereportfor/{id}/{year}/{month}")
 	public ResponseEntity<ResponseDTO<EmployeeMonthlyReportDTO>> empReportOfYearAndMonth(@PathVariable Long id,@PathVariable Integer year,@PathVariable Integer month){
 		EmployeeMonthlyReportDTO monthlyReportOfEmployee = service.getMonthlyReportOfEmployee(id, year, month);

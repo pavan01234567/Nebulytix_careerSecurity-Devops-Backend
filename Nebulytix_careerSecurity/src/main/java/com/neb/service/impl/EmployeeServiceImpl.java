@@ -195,14 +195,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         return p;
 	}
-	 // Get employee details by EMAIL
-//    public EmployeeDetailsResponseDto getEmployeeByEmail(String email) {
-//    	System.out.println(email);
-//    	Employee emp = employeeRepository.findByEmail(email).orElseThrow(()->new CustomeException("Employee not found with email id :"+email));
-//    	EmployeeDetailsResponseDto empdetailsDto = mapper.map(emp, EmployeeDetailsResponseDto.class);
-//        return empdetailsDto;
-//    }
-  
+	
     public List<Work> getTasksByEmployee(Long employeeId) {
         Employee emp = getEmployeeById(employeeId);
         List<Work> workListbyEmployee = workRepository.findByEmployee(emp);
@@ -554,10 +547,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	           throw new IllegalArgumentException("End date cannot be before start date");
 	       }
 
-	       // 2️⃣ Fetch Employee using employeeId (String)
-//	       Employee employee = employeeRepository
-//	               .findByUserId(wfh.getEmployeeId())
-//	               .orElseThrow(() -> new EmployeeNotFoundException( wfh.getEmployeeId()));
+
 	       Employee employee = employeeRepository
 	    		    .findByUserId(wfh.getEmployeeId())
 	    		    .orElseThrow(() -> new EmployeeNotFoundException("Invalid Employee Id"));

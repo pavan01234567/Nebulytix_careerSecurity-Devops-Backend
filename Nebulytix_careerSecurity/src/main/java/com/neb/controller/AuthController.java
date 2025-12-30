@@ -134,13 +134,6 @@ public class AuthController {
             deleteCookie.setAttribute("SameSite", "Lax");
             response.addCookie(deleteCookie);
             
-//            Cookie deleteCookie = new Cookie("refreshToken", null);
-//            deleteCookie.setHttpOnly(true);
-//            deleteCookie.setSecure(true);
-//            deleteCookie.setPath("/");
-//            deleteCookie.setMaxAge(0);
-//            deleteCookie.setAttribute("SameSite", "None");
-//            response.addCookie(deleteCookie);
             System.out.println("logout successful");
 
             return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", msg));
