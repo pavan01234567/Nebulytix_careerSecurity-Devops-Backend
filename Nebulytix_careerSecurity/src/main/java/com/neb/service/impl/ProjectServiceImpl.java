@@ -28,6 +28,7 @@ import com.neb.repo.EmployeeRepository;
 import com.neb.repo.ProjectDocumentRepository;
 import com.neb.repo.ProjectRepository;
 import com.neb.service.ProjectService;
+//import com.neb.dto.project.ProjectsResponseDto;
 
 import jakarta.transaction.Transactional;
 
@@ -51,6 +52,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     // ✅ CHANGED: hardcoded projects directory (NO application.properties needed)
     private static final String PROJECTS_DIR = "projects";
+    
 
     @Override
     public ResponseMessage<List<ProjectResponseDto>> getAllProjects() {
@@ -137,8 +139,6 @@ public class ProjectServiceImpl implements ProjectService {
             AddProjectRequestDto dto,
             MultipartFile quotation,
             MultipartFile requirement,MultipartFile contract) {
-            MultipartFile requirement,
-            MultipartFile contract) {
 
         Client client = clientRepository.findById(dto.getClientId())
                 .orElseThrow(() ->

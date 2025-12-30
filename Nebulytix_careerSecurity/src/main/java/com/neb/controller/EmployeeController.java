@@ -36,7 +36,7 @@ import com.neb.entity.Payslip;
 import com.neb.entity.Work;
 import com.neb.service.EmployeeService;
 
-import com.neb.service.LeaveService;
+//import com.neb.service.LeaveService;
 import com.neb.service.ProjectService;
 
 @RestController
@@ -78,17 +78,6 @@ public class EmployeeController {
         return new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee fetched successfully", emp);
     }
     
-//    @GetMapping("/details/{email}")
-//    public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> getEmployeeByEmail(@PathVariable String email) {
-//    	EmployeeDetailsResponseDto emp = employeeService.getEmployeeByEmail(email);	
-//        if (emp == null) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//                    .body(new ResponseMessage<>(404, "NOT_FOUND", "Employee not found"));
-//        }
-//        return ResponseEntity.ok(
-//                new ResponseMessage<>(200, "OK", "Employee fetched successfully", emp)
-//        );
-//    }
     
     // Get tasks assigned to employee
     @GetMapping("/tasks/{employeeId}")
@@ -122,18 +111,6 @@ public class EmployeeController {
     	
     	return ResponseEntity.ok(new ResponseMessage<String>(HttpStatus.OK.value(), HttpStatus.OK.name(), "daily report result", submitDailyReportResponse));
    }
-    @PostMapping("/logout")
-    public ResponseEntity<ResponseMessage<String>> logout() {
-
-        return ResponseEntity.ok(
-                new ResponseMessage<>(
-                        HttpStatus.OK.value(),
-                        HttpStatus.OK.name(),
-                        "Logout successful",
-                        "Admin logged out successfully"
-                )
-        );
-    }
     
     @PutMapping("/{id}/profile-picture")
     public ResponseEntity<ResponseMessage<String>> uploadProfilePicture(
@@ -217,14 +194,6 @@ public class EmployeeController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-//   
-
-	
-	/**
-	 * 
-	 * @param wfhDto
-	 * @return
-	 */
 
     @PostMapping("/apply-wfh")
     public ResponseEntity<ResponseDTO<EmployeeLeaveDTO>> applyWFH(
