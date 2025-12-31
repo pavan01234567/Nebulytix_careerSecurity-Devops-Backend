@@ -108,24 +108,74 @@ public class HrServiceImpl implements HrService {
 
     @Override
     public String deleteById(Long id) {
-    	Employee employee = empRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+    	    Employee employee = empRepo.findByIdIncludingInactive(id)
+    	                       .orElseThrow(() ->new EmployeeNotFoundException("Employee not found with id: " + id));
+            if (!"inactive".equalsIgnoreCase(employee.getEmpStatus())) {
+    	        throw new CustomeException("Employee must be disabled before permanent deletion with id: " + id);
+    	    }
 
-        // Soft delete employee
+    	    Users user = employee.getUser();
+
+            if (user != null && user.isEnabled()) {
+    	        throw new CustomeException("User account must be disabled before deleting employee with id: " + id);
+    	    }
+
+            employee.setUser(null);
+            empRepo.delete(employee);
+
+    	    if (user != null) {
+    	        usersRepository.delete(user);
+    	    }
+
+    	    return "Employee permanently deleted with id: " + id;
+    }
+  
+    @Override
+	public String disableEmp(Long id) {
+    	
+    	Employee employee = empRepo.findById(id)
+                .orElseThrow(() ->
+                        new EmployeeNotFoundException("Employee not found with id: " + id));
+
+        if ("inactive".equalsIgnoreCase(employee.getEmpStatus())) {
+        	throw new CustomeException("Employee already disabled with id: " + id);
+        }
+
         employee.setEmpStatus("inactive");
 
-        // Disable linked user
         Users user = employee.getUser();
-        if (user != null) {
+        if (user != null && user.isEnabled()) {
             user.setEnabled(false);
             usersRepository.save(user);
         }
 
         empRepo.save(employee);
 
-        return "Employee and user account deactivated successfully";
-    }
+        return "Employee disabled successfully with id: " + id;
 
+	}
+
+	@Override
+	public String enableEmp(Long id) {
+		 Employee employee = empRepo.findById(id).orElseThrow(() ->new EmployeeNotFoundException("Employee not found with id: " + id));
+           System.out.println(employee);
+		    if (!"inactive".equalsIgnoreCase(employee.getEmpStatus())) {
+	              throw new CustomeException("Employee already enabled with id: " + id);
+	        }
+
+	        employee.setEmpStatus("active");
+
+	        Users user = employee.getUser();
+	        if (user != null && !user.isEnabled()) {
+	            user.setEnabled(true);
+	            usersRepository.save(user);
+	        }
+
+	        empRepo.save(employee);
+
+	        return "Employee enabled successfully with id: " + id;
+
+	}
     @Override
     public EmployeeDetailsResponseDto addAttendence(Long id, int days) {
         Employee emp = empRepo.findById(id).orElseThrow(() -> new CustomeException("Employee not found"));
@@ -548,7 +598,5 @@ public class HrServiceImpl implements HrService {
 		}
 
 
-	
-	
 }
 

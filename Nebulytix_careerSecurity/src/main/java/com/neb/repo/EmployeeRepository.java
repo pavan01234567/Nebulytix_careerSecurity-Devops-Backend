@@ -80,5 +80,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             WHERE e.id = :employeeId
         """)
      public  Project findProjectByEmployeeId(@Param("employeeId") Long employeeId);
+      @Query("SELECT e FROM Employee e WHERE e.id = :id AND e.empStatus='inactive'")
+     public Optional<Employee> findByIdIncludingInactive(@Param("id") Long id);
 
 }

@@ -141,12 +141,7 @@ public class AdminController {
 	    	String msg = adminService.enableAdmin(id);
 	        return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Admin Enabled successfully", msg));
 	    }
-	    // delete (HR,MANAGER,EMPLOYEE) by id
-	    @DeleteMapping("/delete/hr/{id}")
-	    public ResponseEntity<ResponseMessage<?>> deleteHr(@PathVariable Long id){
-	    	String deleteRes = adminService.deleteHr(id);
-	    	return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "hr deleted successfully", deleteRes));
-	    }
+	   
 	    
 	    @DeleteMapping("/delete/client/{id}")
 	    public ResponseEntity<ResponseMessage<?>> deleteClient(@PathVariable Long id){
