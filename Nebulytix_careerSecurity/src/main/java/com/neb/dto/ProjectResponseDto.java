@@ -1,7 +1,10 @@
 package com.neb.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
+import com.neb.dto.client.ClientProfileDto;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.entity.Project;
 
 import lombok.Data;
@@ -21,7 +24,7 @@ public class ProjectResponseDto {
     private String status;
     private Integer progress;
     private Long clientId;
-   
+    
     // Converts Project entity to DTO
     public static ProjectResponseDto fromEntity(Project project) {
         if (project == null) return null;

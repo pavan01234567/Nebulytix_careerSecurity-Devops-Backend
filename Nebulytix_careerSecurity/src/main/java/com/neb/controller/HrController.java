@@ -120,11 +120,24 @@ public class HrController {
         EmployeeDetailsResponseDto employee = service.getEmployee(id);
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee fetched successfully", employee));
     }
-
-    @DeleteMapping("/delete/{id}")
+    
+    // delete (HR,MANAGER,EMPLOYEE) by id
+    @DeleteMapping("employee/delete/{id}")
     public ResponseEntity<ResponseMessage<String>> deleteEmployee(@PathVariable Long id) {
         String deleteById = service.deleteById(id);
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee deleted successfully", deleteById));
+    }
+    
+    @PutMapping("emp/{id}/disable")
+    public ResponseEntity<ResponseMessage<?>> disableEmployee(@PathVariable Long id) {
+       String msg = service.disableEmp(id);
+        return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Employee Disabled successfully", msg));
+    }
+
+    @PutMapping("emp/{id}/enable")
+    public ResponseEntity<ResponseMessage<?>> enableEmployee(@PathVariable Long id) {
+        String msg = service.enableEmp(id);
+        return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Employee Enabled successfully", msg));
     }
 
     //========================= paySlip ======================
@@ -304,5 +317,7 @@ public class HrController {
 		ResponseDTO<EmployeeMonthlyReportDTO> reportRes = new ResponseDTO<EmployeeMonthlyReportDTO>("Monthly Report Fetched Succesfully for Year"+year+" and month "+Month.of(month),monthlyReportOfEmployee);
 		return new ResponseEntity<ResponseDTO<EmployeeMonthlyReportDTO>>(reportRes,HttpStatus.OK);
 	}
+	
+	 
 
 }

@@ -47,5 +47,7 @@ public interface AdminService {
 	public ClientProfileDto updateClient(Long clientId, UpdateClientRequest req);
 	public String disableAdmin(Long id);
 	public String enableAdmin(Long id);
+	public String disableClient(Long id);
+	public String enableClient(Long id);
 
 }

@@ -34,5 +34,6 @@ public interface EmployeeService {
     public EmployeeDTO logout(Long employeeId);
     public EmployeeLeaveDTO applyLeave(EmployeeLeaveDTO empLeaveDto);
     public EmployeeLeaveDTO applyWFH(EmployeeLeaveDTO wfh);
+    
 
 }

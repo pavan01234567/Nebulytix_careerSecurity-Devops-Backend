@@ -21,8 +21,8 @@ public interface ProjectService {
 	            
 	    );
 
-    public ResponseMessage<List<ProjectResponseDto>> getAllProjects();
-    public ResponseMessage<ProjectResponseDto> getProjectById(Long id);
+    public ResponseMessage<List<ProjectsResponseDto>> getAllProjects();
+    public ResponseMessage<ProjectsResponseDto> getProjectById(Long id);
     public ResponseMessage<ProjectResponseDto> updateProject(Long id, UpdateProjectRequestDto dto);
     public ResponseMessage<String> deleteProject(Long id);
     public ProjectResponseDto updateProjectStatus(Long projectId, String status);

@@ -1,11 +1,12 @@
 package com.neb.repo;
 
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.neb.entity.Client;
 import com.neb.entity.Project;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
@@ -23,4 +24,15 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 		    WHERE e.id = :employeeId
 		    """)
 	public List<Project> findProjectsByEmployeeId(@Param("employeeId") Long employeeId);
+    
+    @Query("""
+            SELECT DISTINCT p
+            FROM Project p
+            LEFT JOIN FETCH p.client
+            LEFT JOIN FETCH p.employees
+            WHERE p.id = :projectId
+        """)
+        Optional<Project> findProjectWithClientAndEmployees(
+                @Param("projectId") Long projectId
+        );
 }

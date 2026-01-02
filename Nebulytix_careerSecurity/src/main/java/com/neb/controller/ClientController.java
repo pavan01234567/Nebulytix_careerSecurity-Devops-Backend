@@ -18,6 +18,7 @@ import com.neb.dto.EmployeeResponseDto;
 import com.neb.dto.ResponseMessage;
 import com.neb.dto.WorkResponseDto;
 import com.neb.dto.client.ClientProfileDto;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.entity.DailyReport;
 import com.neb.entity.Employee;
 import com.neb.entity.Project;
@@ -60,8 +61,8 @@ public class ClientController {
     //  Get employees working under a specific project
     @PreAuthorize("hasRole('CLIENT')")
     @GetMapping("/projects/{projectId}/employees")
-    public ResponseEntity<ResponseMessage<List<EmployeeResponseDto>>> getEmployeesByProject(@PathVariable Long projectId) {
-        List<EmployeeResponseDto> employees = clientService.getEmployeesByProject(projectId);
+    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getEmployeesByProject(@PathVariable Long projectId) {
+          List<EmployeeProfileDto> employees = clientService.getEmployeesByProject(projectId);
         return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", "Employees for project fetched successfully", employees));
     }
 

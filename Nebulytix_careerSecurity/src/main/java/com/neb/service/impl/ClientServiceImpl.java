@@ -16,6 +16,7 @@ import com.neb.dto.EmployeeResponseDto;
 import com.neb.dto.WorkResponseDto;
 import com.neb.dto.client.AddClientRequest;
 import com.neb.dto.client.ClientProfileDto;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.entity.Client;
 import com.neb.entity.DailyReport;
 import com.neb.entity.Employee;
@@ -93,11 +94,15 @@ public class ClientServiceImpl implements ClientService{
     }
 
     @Override
-    public List<EmployeeResponseDto> getEmployeesByProject(Long projectId) {
+    public List<EmployeeProfileDto> getEmployeesByProject(Long projectId) {
     	List<Employee> employees = employeeRepo.findEmployeesByProjectId(projectId);
 
         return employees.stream()
-                .map(emp -> mapper.map(emp, EmployeeResponseDto.class))
+        		.map(emp -> {
+                    EmployeeProfileDto dto = mapper.map(emp, EmployeeProfileDto.class);
+                    dto.setEmail(emp.getUser().getEmail()); 
+                    return dto;
+                })
                 .toList();
     }
 
@@ -141,4 +146,6 @@ public class ClientServiceImpl implements ClientService{
 
         return dailyReportRepository.findByEmployee_Project_Id(projectId);
     }
+
+	
 }

@@ -15,4 +15,6 @@ import lombok.Data;
 	    private String website;
 	    private String industryType; // IT, Finance, Construction, etc.
 	    private String gstNumber;
+	    private String empStatus;
+	    private boolean userEnabled;
 	}

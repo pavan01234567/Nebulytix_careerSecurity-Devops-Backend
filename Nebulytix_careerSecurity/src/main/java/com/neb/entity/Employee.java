@@ -34,8 +34,8 @@ import lombok.Setter;
 //@Data
 @Getter
 @Setter
-@SQLDelete(sql = "update employees set emp_status='inactive' where id=?")
-@SQLRestriction("emp_status<> 'inactive'")
+//@SQLDelete(sql = "update employees set emp_status='inactive' where id=?")
+//@SQLRestriction("emp_status<> 'inactive'")
 @ToString(exclude = {"employeeSessions","leaves","leaveBalance","montlyReport"})
 public class Employee {
 

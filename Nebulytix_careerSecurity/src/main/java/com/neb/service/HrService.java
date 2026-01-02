@@ -54,5 +54,7 @@ public interface HrService {
 	public List<EmployeeMonthlyReportDTO> generateMontlyReport();
     public EmployeeMonthlyReportDTO getMonthlyReportOfEmployee(Long employeeId, Integer year, Integer month);
 	public List<EmployeeLeaveDTO> employeeOnLeave();
+	public String disableEmp(Long id);
+	public String enableEmp(Long id);
 
 }

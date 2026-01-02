@@ -16,4 +16,6 @@ public class EmployeeProfileDto {
     private LocalDate joiningDate;
     private Double salary;
     private String profilePictureUrl;
+    private String empStatus;
+    private boolean userEnabled;
 }

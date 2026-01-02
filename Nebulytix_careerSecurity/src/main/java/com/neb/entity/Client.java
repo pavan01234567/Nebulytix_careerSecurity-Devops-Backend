@@ -21,8 +21,8 @@ import org.hibernate.annotations.SQLRestriction;
 @Entity
 @Table(name = "clients")
 @Data
-@SQLDelete(sql = "UPDATE clients SET status = 'inactive' WHERE id = ?")
-@SQLRestriction("status <> 'inactive'")
+//@SQLDelete(sql = "UPDATE clients SET status = 'inactive' WHERE id = ?")
+//@SQLRestriction("status <> 'inactive'")
 public class Client {
 
     @Id

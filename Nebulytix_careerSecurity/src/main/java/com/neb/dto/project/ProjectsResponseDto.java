@@ -1,7 +1,11 @@
 package com.neb.dto.project;
 
 import java.time.LocalDate;
+import java.util.List;
 
+import com.neb.dto.EmployeeResponseDto;
+import com.neb.dto.client.ClientProfileDto;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.entity.Project;
 
 import lombok.Data;
@@ -24,6 +28,8 @@ public class ProjectsResponseDto {
     private String contractPdfUrl;
     private String quotationPdfUrl;
     private String requirementDocUrl;
+    private ClientProfileDto client;                // ✅ Client profile
+    private List<EmployeeProfileDto> employees; 
     // Converts Project entity to DTO
     public static ProjectsResponseDto fromEntity(Project project) {
         if (project == null) return null;
@@ -47,4 +53,5 @@ public class ProjectsResponseDto {
         dto.setRequirementDocUrl(project.getRequirementDocUrl());
         return dto;
     }
+
 }

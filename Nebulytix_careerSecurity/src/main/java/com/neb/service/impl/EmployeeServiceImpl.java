@@ -19,12 +19,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-
 import com.neb.constants.WorkStatus;
 import com.neb.dto.AddDailyReportRequestDto;
 import com.neb.dto.EmployeeDTO;
 import com.neb.dto.EmployeeLeaveDTO;
-import com.neb.dto.EmployeeResponseDto;
 import com.neb.dto.WorkResponseDto;
 import com.neb.dto.employee.AddEmployeeRequest;
 import com.neb.dto.employee.EmployeeProfileDto;
@@ -642,7 +640,5 @@ public class EmployeeServiceImpl implements EmployeeService {
 
           return response;
 	}
-
-	
 }
 	       
