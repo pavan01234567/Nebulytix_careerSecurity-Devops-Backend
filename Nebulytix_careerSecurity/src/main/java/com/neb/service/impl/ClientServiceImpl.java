@@ -80,7 +80,7 @@ public class ClientServiceImpl implements ClientService{
 		
 		return savedClient.getId();
 	}
-	  // Helper: Get logged-in client
+	  //  Get logged-in client
     private Users getLoggedInClient() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return usersRepository.findByEmail(email)

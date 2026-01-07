@@ -141,7 +141,7 @@ public class AdminServiceImpl implements AdminService{
         return dto;
 	}
     
-           //............. adding work ..............
+           //adding work 
     public String assignWork(AddWorkRequestDto request,MultipartFile file) {
         Employee emp = empRepo.findById(request.getEmployeeId())
                 .orElseThrow(() -> new CustomeException("Employee not found with id :"+request.getEmployeeId()));
@@ -309,9 +309,6 @@ public class AdminServiceImpl implements AdminService{
 	    if (updateReq.getLastName() != null && !updateReq.getLastName().isEmpty())
 	        hr.setLastName(updateReq.getLastName());
 
-//	    if (updateReq.getEmail() != null && !updateReq.getEmail().isEmpty())
-//	        hr.setEmail(updateReq.getEmail());
-
 	    if (updateReq.getMobile() != null && !updateReq.getMobile().isEmpty())
 	        hr.setMobile(updateReq.getMobile());
 
@@ -326,32 +323,6 @@ public class AdminServiceImpl implements AdminService{
 	    if (updateReq.getPaidLeaves() != 0)
 	        hr.setPaidLeaves(updateReq.getPaidLeaves());
 
-	    // -------- BANK & TAX DETAILS --------
-//	    if (updateReq.getBankAccountNumber() != null && !updateReq.getBankAccountNumber().isEmpty())
-//	        hr.setBankAccountNumber(updateReq.getBankAccountNumber());
-//
-//	    if (updateReq.getIfscCode() != null && !updateReq.getIfscCode().isEmpty())
-//	        hr.setIfscCode(updateReq.getIfscCode());
-//
-//	    if (updateReq.getBankName() != null && !updateReq.getBankName().isEmpty())
-//	        hr.setBankName(updateReq.getBankName());
-//
-//	    if (updateReq.getPfNumber() != null && !updateReq.getPfNumber().isEmpty())
-//	        hr.setPfNumber(updateReq.getPfNumber());
-//
-//	    if (updateReq.getPanNumber() != null && !updateReq.getPanNumber().isEmpty())
-//	        hr.setPanNumber(updateReq.getPanNumber());
-//
-//	    if (updateReq.getUanNumber() != null && !updateReq.getUanNumber().isEmpty())
-//	        hr.setUanNumber(updateReq.getUanNumber());
-//
-//	    if (updateReq.getEpsNumber() != null && !updateReq.getEpsNumber().isEmpty())
-//	        hr.setEpsNumber(updateReq.getEpsNumber());
-//
-//	    if (updateReq.getEsiNumber() != null && !updateReq.getEsiNumber().isEmpty())
-//	        hr.setEsiNumber(updateReq.getEsiNumber());
-
-	    // -------- SAVE --------
 	    Employee updatedHr = empRepo.save(hr);
 
 	    return mapper.map(updatedHr, EmployeeDetailsResponseDto.class);
@@ -483,7 +454,7 @@ public class AdminServiceImpl implements AdminService{
 		            // If mobile is in Employee
 		            dto.setMobile(emp.getMobile());
 
-		            // From User entity
+		        
 		            if (emp.getUser() != null) {
 		                dto.setEmail(emp.getUser().getEmail());
 		            }
@@ -540,6 +511,4 @@ public class AdminServiceImpl implements AdminService{
         return mapper.map(save, ClientProfileDto.class);
 		
 	}
-
-	
 }

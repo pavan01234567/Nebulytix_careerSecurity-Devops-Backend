@@ -5,13 +5,16 @@ import java.util.List;
 
 
 import com.neb.dto.AddJobRequestDto;
+import com.neb.dto.AssignLeaveBalanceDTO;
 import com.neb.dto.EmployeeBankDetailsRequest;
 import com.neb.dto.EmployeeBankDetailsResponse;
 import com.neb.dto.EmployeeDetailsResponseDto;
+import com.neb.dto.EmployeeLeaveBalanceDTO;
 import com.neb.dto.EmployeeLeaveDTO;
 import com.neb.dto.EmployeeMonthlyReportDTO;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
+import com.neb.dto.TodayAttendanceCountDTO;
 import com.neb.dto.employee.UpdateEmployeeRequestDto;
 import com.neb.dto.employee.UpdateEmployeeResponseDto;
 import com.neb.dto.salary.SalaryRequestDto;
@@ -54,5 +57,7 @@ public interface HrService {
 	public List<EmployeeMonthlyReportDTO> generateMontlyReport();
     public EmployeeMonthlyReportDTO getMonthlyReportOfEmployee(Long employeeId, Integer year, Integer month);
 	public List<EmployeeLeaveDTO> employeeOnLeave();
+	 public List<EmployeeLeaveBalanceDTO> assignLeaveBalance(AssignLeaveBalanceDTO dto);
+	 public TodayAttendanceCountDTO todayAttendanceCount();
 
 }

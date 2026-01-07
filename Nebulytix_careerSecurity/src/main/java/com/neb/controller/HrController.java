@@ -20,12 +20,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.neb.constants.EmployeeLeaveType;
 import com.neb.dto.AddJobRequestDto;
+import com.neb.dto.AssignLeaveBalanceDTO;
 import com.neb.dto.EmailRequestDto;
 import com.neb.dto.EmployeeBankDetailsRequest;
 import com.neb.dto.EmployeeBankDetailsResponse;
 import com.neb.dto.EmployeeDetailsResponseDto;
+import com.neb.dto.EmployeeLeaveBalanceDTO;
 import com.neb.dto.EmployeeLeaveDTO;
 import com.neb.dto.EmployeeMonthlyReportDTO;
 import com.neb.dto.GeneratePayslipRequest;
@@ -33,6 +34,7 @@ import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.ResponseDTO;
 import com.neb.dto.ResponseMessage;
+import com.neb.dto.TodayAttendanceCountDTO;
 import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.employee.UpdateEmployeeRequestDto;
 import com.neb.dto.employee.UpdateEmployeeResponseDto;
@@ -47,6 +49,7 @@ import com.neb.service.EmployeeService;
 import com.neb.service.HrService;
 import com.neb.service.UsersService;
 import com.neb.util.ApprovalStatus;
+import com.neb.util.EmployeeLeaveType;
 
 
 @RestController
@@ -304,5 +307,26 @@ public class HrController {
 		ResponseDTO<EmployeeMonthlyReportDTO> reportRes = new ResponseDTO<EmployeeMonthlyReportDTO>("Monthly Report Fetched Succesfully for Year"+year+" and month "+Month.of(month),monthlyReportOfEmployee);
 		return new ResponseEntity<ResponseDTO<EmployeeMonthlyReportDTO>>(reportRes,HttpStatus.OK);
 	}
+    @PostMapping("/assign-leave-balance")
+    public ResponseEntity<List<EmployeeLeaveBalanceDTO>> assignLeaveBalance(
+            @RequestBody AssignLeaveBalanceDTO dto) {
+
+        List<EmployeeLeaveBalanceDTO> response = service.assignLeaveBalance(dto);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/attendance/today")
+    public ResponseEntity<ResponseDTO<TodayAttendanceCountDTO>> todayAttendance() {
+
+        TodayAttendanceCountDTO result = service.todayAttendanceCount();
+
+        ResponseDTO<TodayAttendanceCountDTO> response =
+                new ResponseDTO<>(
+                        "Today's attendance fetched successfully",
+                        result
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
 
 }

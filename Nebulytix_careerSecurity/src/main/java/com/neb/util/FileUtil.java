@@ -4,29 +4,35 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.UUID;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class FileUtil {
 
-    private static final String BASE_PATH = "uploads/projects/";
-
-    public static String upload(MultipartFile file) {
-
+    /**
+     * Upload file and return absolute path for DB
+     */
+    public static String upload(MultipartFile file, String uploadDir) {
         if (file == null || file.isEmpty()) return null;
 
         try {
-            File dir = new File(BASE_PATH);
+            // Ensure upload directory exists
+            File dir = new File(uploadDir);
             if (!dir.exists()) dir.mkdirs();
 
-            String name = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            File dest = new File(dir, name);
+            // Sanitize filename and add timestamp
+            String fileName = System.currentTimeMillis() + "_" +
+                    file.getOriginalFilename().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
 
-            Files.copy(file.getInputStream(), dest.toPath());
+            // Full path where file will be stored
+            Path filePath = Paths.get(uploadDir, fileName);
+            Files.copy(file.getInputStream(), filePath);
 
-            return BASE_PATH + name;
+            // ✅ Return absolute path to store in DB
+            return filePath.toString();
 
         } catch (Exception e) {
-            throw new RuntimeException("File upload failed");
+            throw new RuntimeException("File upload failed: " + file.getOriginalFilename(), e);
         }
     }
 }

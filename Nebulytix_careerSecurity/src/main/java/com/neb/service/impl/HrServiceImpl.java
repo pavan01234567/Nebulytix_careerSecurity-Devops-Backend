@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,22 +18,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.neb.dto.AddJobRequestDto;
-import com.neb.dto.EmployeeBankDetailsRequest;
-import com.neb.dto.EmployeeBankDetailsResponse;
+import com.neb.dto.AssignLeaveBalanceDTO;
 import com.neb.dto.EmployeeDetailsResponseDto;
+import com.neb.dto.EmployeeLeaveBalanceDTO;
 import com.neb.dto.EmployeeLeaveDTO;
 import com.neb.dto.EmployeeMonthlyReportDTO;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
-import com.neb.dto.employee.UpdateEmployeeRequestDto;
-import com.neb.dto.employee.UpdateEmployeeResponseDto;
+import com.neb.dto.TodayAttendanceCountDTO;
 import com.neb.dto.salary.SalaryRequestDto;
 import com.neb.dto.salary.SalaryResponseDto;
 import com.neb.entity.DailyReport;
 import com.neb.entity.Employee;
-import com.neb.entity.EmployeeBankDetails;
 import com.neb.entity.EmployeeLeaveBalance;
 import com.neb.entity.EmployeeLeaves;
+import com.neb.entity.EmployeeLogInDetails;
 import com.neb.entity.EmployeeMonthlyReport;
 import com.neb.entity.EmployeeSalary;
 import com.neb.entity.Job;
@@ -40,7 +41,10 @@ import com.neb.entity.Payslip;
 import com.neb.entity.Users;
 import com.neb.exception.CustomeException;
 import com.neb.exception.EmployeeNotFoundException;
+import com.neb.exception.InvalidActionException;
+import com.neb.exception.LeaveOperationException;
 import com.neb.exception.NoActiveSalaryException;
+import com.neb.exception.ResourceNotFoundException;
 import com.neb.exception.SalaryNotFoundException;
 import com.neb.repo.DailyReportRepository;
 import com.neb.repo.EmployeeBankDetailsRepository;
@@ -57,8 +61,8 @@ import com.neb.repo.PayslipRepository;
 import com.neb.repo.UsersRepository;
 import com.neb.service.EmailService;
 import com.neb.service.HrService;
+import com.neb.service.NotificationService;
 import com.neb.util.ApprovalStatus;
-import com.neb.util.EmployeeDayStatus;
 import com.neb.util.EmployeeDayStatus;
 import com.neb.util.EmployeeLeaveType;
 import com.neb.util.ReportGeneratorPdf;
@@ -92,6 +96,8 @@ public class HrServiceImpl implements HrService {
 
     @Autowired
     private JobApplicationRepository jobApplicationRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     @Autowired
     private EmailService emailService;
@@ -289,11 +295,11 @@ public class HrServiceImpl implements HrService {
 	@Override
 	public void deletePayslip(Long id) {
 		
-		// 1. Find payslip
+		// 1 Find payslip
         Payslip payslip = payslipRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payslip not found with ID: " + id));
 
-        // 2. Delete file from filesystem
+        // 2 Delete file from filesystem
         if (payslip.getPdfPath() != null) {
 
             File file = new File(payslip.getPdfPath());
@@ -306,7 +312,7 @@ public class HrServiceImpl implements HrService {
             }
         }
 
-        // 3. Delete DB record
+        // 3 Delete DB record
         payslipRepo.delete(payslip);
 
         
@@ -413,55 +419,116 @@ public class HrServiceImpl implements HrService {
 			return employeeLeavePendingDto;
 		}
 
-		@Transactional
-		public EmployeeLeaveDTO approvalOrReject(Long leaveId, ApprovalStatus status) {
+//		@Transactional
+//		public EmployeeLeaveDTO approvalOrReject(Long leaveId, ApprovalStatus status) {
+//
+//		    EmployeeLeaves leave = empLeavesRepo.findById(leaveId)
+//		            .orElseThrow(() ->  new ResourceNotFoundException("Leave not found for ID: " + leaveId));
+//
+//		    if (leave.getLeaveStatus() != ApprovalStatus.PENDING) {
+//		    	throw new InvalidActionException("This leave is already processed");
+//		    }
+//
+//		    if (status == ApprovalStatus.APPROVED) {
+//
+//		        EmployeeLeaveBalance balance =
+//		                empLeaveBlnceRepo
+//		                        .findByEmployeeAndLeaveTypeAndCurrentYear(
+//		                                leave.getEmployee(),	
+//		                                leave.getLeaveType(),   
+//		                                LocalDate.now().getYear()
+//		                        )
+//		                        .orElseThrow(() ->
+//		                                new RuntimeException("Leave balance not found"));
+//
+//		        long usedAfterApproval = balance.getUsed() + leave.getTotalDays();
+//		        long remaining = balance.getTotalAllowed() - usedAfterApproval;
+//
+//		        if (remaining < 0) {
+//		        	throw new LeaveOperationException("Insufficient leave balance");
+//		        }
+//
+//		        balance.setUsed(usedAfterApproval);
+//		        balance.setRemaining(remaining);
+//
+//		        empLeaveBlnceRepo.save(balance);
+//		    }
+//
+//		    leave.setLeaveStatus(status);
+//		    EmployeeLeaves savedLeave = empLeavesRepo.save(leave);
+//
+//		    return new EmployeeLeaveDTO(
+//		            savedLeave.getEmployee().getId(),
+//		            savedLeave.getId(),
+//		            savedLeave.getLeaveType(),
+//		            savedLeave.getStartDate(),
+//		            savedLeave.getEndDate(),
+//		            savedLeave.getReason(),
+//		            savedLeave.getTotalDays(),
+//		            savedLeave.getLeaveStatus()
+//		    );
+//		}
+    @Transactional
+    public EmployeeLeaveDTO approvalOrReject(Long leaveId, ApprovalStatus status) {
 
-		    EmployeeLeaves leave = empLeavesRepo.findById(leaveId)
-		            .orElseThrow(() -> new RuntimeException("Invalid Leave Id"));
+       
+        EmployeeLeaves leave = empLeavesRepo.findById(leaveId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Leave not found for ID: " + leaveId));
 
-		    if (leave.getLeaveStatus() != ApprovalStatus.PENDING) {
-		        throw new RuntimeException("Leave already processed");
-		    }
+       
+        if (leave.getLeaveStatus() != ApprovalStatus.PENDING) {
+            throw new InvalidActionException("This leave is already processed");
+        }
 
-		    if (status == ApprovalStatus.APPROVED) {
+   
+        if (status == ApprovalStatus.APPROVED) {
 
-		        EmployeeLeaveBalance balance =
-		                empLeaveBlnceRepo
-		                        .findByEmployeeAndLeaveTypeAndCurrentYear(
-		                                leave.getEmployee(),	
-		                                leave.getLeaveType(),   // 🔥 use leave's type
-		                                LocalDate.now().getYear()
-		                        )
-		                        .orElseThrow(() ->
-		                                new RuntimeException("Leave balance not found"));
+            
+            int leaveYear = leave.getCurrentYear();
 
-		        long usedAfterApproval = balance.getUsed() + leave.getTotalDays();
-		        long remaining = balance.getTotalAllowed() - usedAfterApproval;
+            EmployeeLeaveBalance balance =
+                    empLeaveBlnceRepo
+                            .findByEmployeeAndLeaveTypeAndCurrentYear(
+                                    leave.getEmployee(),
+                                    leave.getLeaveType(),
+                                    leaveYear
+                            )
+                            .orElseThrow(() ->
+                                    new RuntimeException("Leave balance not found"));
 
-		        if (remaining < 0) {
-		            throw new RuntimeException("Insufficient leave balance");
-		        }
+            long usedAfterApproval = balance.getUsed() + leave.getTotalDays();
+            long remaining = balance.getTotalAllowed() - usedAfterApproval;
 
-		        balance.setUsed(usedAfterApproval);
-		        balance.setRemaining(remaining);
+            if (remaining < 0) {
+                throw new LeaveOperationException("Insufficient leave balance");
+            }
 
-		        empLeaveBlnceRepo.save(balance);
-		    }
+            balance.setUsed(usedAfterApproval);
+            balance.setRemaining(remaining);
 
-		    leave.setLeaveStatus(status);
-		    EmployeeLeaves savedLeave = empLeavesRepo.save(leave);
+            empLeaveBlnceRepo.save(balance);
+        }
 
-		    return new EmployeeLeaveDTO(
-		            savedLeave.getEmployee().getId(),
-		            savedLeave.getId(),
-		            savedLeave.getLeaveType(),
-		            savedLeave.getStartDate(),
-		            savedLeave.getEndDate(),
-		            savedLeave.getReason(),
-		            savedLeave.getTotalDays(),
-		            savedLeave.getLeaveStatus()
-		    );
-		}
+       
+        leave.setLeaveStatus(status);
+        EmployeeLeaves savedLeave = empLeavesRepo.save(leave);
+
+        notificationService.notifyEmployeeLeaveDecision(savedLeave);
+
+        
+        return new EmployeeLeaveDTO(
+                savedLeave.getEmployee().getId(),
+                savedLeave.getId(),
+                savedLeave.getLeaveType(),
+                savedLeave.getStartDate(),
+                savedLeave.getEndDate(),
+                savedLeave.getReason(),
+                savedLeave.getTotalDays(),
+                savedLeave.getLeaveStatus()
+        );
+    }
+
 
 		@Transactional
 		public List<EmployeeMonthlyReportDTO> generateMontlyReport() {
@@ -555,9 +622,113 @@ public class HrServiceImpl implements HrService {
 		        return leaveResDto;
 		    }).toList();
 		}
+		
+		 @Override
+		    public List<EmployeeLeaveBalanceDTO> assignLeaveBalance(AssignLeaveBalanceDTO dto) {
 
+		        Employee employee = empRepo.findById(dto.getEmployeeId())
+		                .orElseThrow(() -> new EmployeeNotFoundException("Invalid Employee ID"));
+
+		        List<EmployeeLeaveBalanceDTO> responseList = new ArrayList<>();
+
+		        dto.getLeaveAllocation().forEach((leaveTypeStr, allowedDays) -> {
+
+		            EmployeeLeaveType leaveType = EmployeeLeaveType.valueOf(leaveTypeStr.toUpperCase());
+
+		            responseList.add(saveOrUpdateBalance(employee, leaveType, allowedDays, dto.getYear()));
+		        });
+
+		        return responseList;
+		    }
+
+//		    
+		 private EmployeeLeaveBalanceDTO saveOrUpdateBalance(
+			        Employee employee, EmployeeLeaveType type, Long allowed, Integer year) {
+
+			    Integer leaveYear = (year != null) ? year : LocalDate.now().getYear();
+
+			    EmployeeLeaveBalance balance = empLeaveBlnceRepo
+			            .findByEmployeeAndLeaveTypeAndCurrentYear(employee, type, leaveYear)
+			            .orElse(null);
+
+			    if (balance == null) {
+			        balance = new EmployeeLeaveBalance();
+			        balance.setEmployee(employee);
+			        balance.setLeaveType(type);
+			        balance.setCurrentYear(leaveYear); // never null now
+			    }
+
+			    balance.setTotalAllowed(allowed);
+			    balance.setUsed(0L);
+			    balance.setRemaining(allowed);
+
+			    EmployeeLeaveBalance saved = empLeaveBlnceRepo.save(balance);
+
+			    EmployeeLeaveBalanceDTO dto = new EmployeeLeaveBalanceDTO();
+			    dto.setId(saved.getId());
+			    dto.setEmployeeId(employee.getId());
+			    dto.setLeaveType(EmployeeLeaveType.valueOf(saved.getLeaveType().name()));
+			    dto.setCurrentYear(saved.getCurrentYear());
+			    dto.setTotalAllowed(saved.getTotalAllowed());
+			    dto.setUsed(saved.getUsed());
+			    dto.setRemaining(saved.getRemaining());
+
+			    return dto;
+			}
+		 @Override
+		 public TodayAttendanceCountDTO todayAttendanceCount() {
+
+		     List<Employee> employees = empRepo.findAll();
+
+		     long presentCount = 0;
+		     long wfhCount = 0;
+
+		     LocalDate today = LocalDate.now();
+
+		     for (Employee emp : employees) {
+
+		         EmployeeLogInDetails session =
+		                 empLoginRepo.findTopByEmployeeAndLogoutTimeIsNullOrderByLoginTimeDesc(emp);
+
+		        
+		         if (session == null || session.getLoginTime() == null) {
+		             continue;
+		         }
+
+		        
+		         LocalDate loginDate = session.getLoginTime()
+		                                      .atZone(ZoneId.systemDefault())
+		                                      .toLocalDate();
+		         if (!loginDate.equals(today)) {
+		             continue;
+		         }
 
 	
-	
+		         System.out.println(
+		                 "EMP=" + emp.getId() +
+		                 " LOGIN=" + session.getLoginTime() +
+		                 " STATUS=" + session.getDayStatus()
+		         );
+
+		         String status = session.getDayStatus();
+
+		         if (status == null) {
+		             continue;
+		         }
+
+		         
+		         if (status.contains(EmployeeDayStatus.PRESENT.name())) {
+		             presentCount++;
+		         }
+		         else if (status.contains(EmployeeDayStatus.WFH.name())) {
+		             wfhCount++;
+		         }
+		     }
+
+		     return new TodayAttendanceCountDTO(presentCount, wfhCount);
+		 }
+
+
+
 }
 

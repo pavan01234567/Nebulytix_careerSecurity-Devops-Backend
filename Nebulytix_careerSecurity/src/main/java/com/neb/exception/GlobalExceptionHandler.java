@@ -188,5 +188,93 @@ public class GlobalExceptionHandler {
         body.put("message", message);
         return new ResponseEntity<>(body, status);
     }
+    @ExceptionHandler(EmployeeAlreadyLoggedInException.class)
+    public ResponseEntity<ErrorResponse> handleAlreadyLogged(EmployeeAlreadyLoggedInException ex, WebRequest request) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "LOGIN_ERROR",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AlreadyCheckedOutException.class)
+    public ResponseEntity<ErrorResponse> handleAlreadyCheckedOut(AlreadyCheckedOutException ex, WebRequest request) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "CHECKOUT_ERROR",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidDateRangeException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidDate(InvalidDateRangeException ex, WebRequest request) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_DATE_RANGE",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InsufficientLeaveBalanceException.class)
+    public ResponseEntity<ErrorResponse> handleLeaveBalance(InsufficientLeaveBalanceException ex, WebRequest request) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "INSUFFICIENT_LEAVE_BALANCE",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(EmployeeNotLoggedInException.class)
+    public ResponseEntity<ErrorResponse> handleNotLoggedIn(EmployeeNotLoggedInException ex, WebRequest request) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "NOT_LOGGED_IN",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(WfhBalanceNotInitializedException.class)
+    public ResponseEntity<ErrorResponse> handleBalanceInit(WfhBalanceNotInitializedException ex, WebRequest req) {
+        ErrorResponse resp = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "WFH_BALANCE_NOT_INITIALIZED",
+                ex.getMessage(),
+                req.getDescription(false)
+        );
+        return new ResponseEntity<>(resp, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(WfhInsufficientBalanceException.class)
+    public ResponseEntity<ErrorResponse> handleWfhBalance(WfhInsufficientBalanceException ex, WebRequest req) {
+        ErrorResponse resp = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "INSUFFICIENT_WFH_BALANCE",
+                ex.getMessage(),
+                req.getDescription(false)
+        );
+        return new ResponseEntity<>(resp, HttpStatus.BAD_REQUEST);
+
+}
+    
+    @ExceptionHandler(InvalidActionException.class)
+    public ResponseEntity<ResponseMessage<String>> handleInvalidAction(InvalidActionException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResponseMessage<>(400, "BAD_REQUEST", ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(LeaveOperationException.class)
+    public ResponseEntity<ResponseMessage<String>> handleLeaveOperation(LeaveOperationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ResponseMessage<>(409, "CONFLICT", ex.getMessage(), null));
+    }
 
 }
