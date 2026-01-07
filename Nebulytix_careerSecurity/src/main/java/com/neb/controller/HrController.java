@@ -56,19 +56,14 @@ public class HrController {
 
     @Autowired
     private HrService service;
-
     @Autowired
     private EmployeeService employeeService;
-    
     @Autowired
     private UsersService usersService;
-    
     @Autowired
     private AdminService adminService;
-    
     @Autowired
     private EmployeeBankDetailsService bankService;
-    
     
     @GetMapping("/me")
     public ResponseEntity<ResponseMessage<EmployeeProfileDto>> getMyProfile() {
@@ -81,7 +76,6 @@ public class HrController {
         adminService.createEmployee(req);
         return ResponseEntity.ok(new ResponseMessage(200, "OK", "User created successfully"));
     }
-    
     
    //====================== salary part ==============================
     @PostMapping("/add/salary")
@@ -98,8 +92,8 @@ public class HrController {
     
     @GetMapping("listsal/active")
     public ResponseEntity<ResponseMessage<List<SalaryResponseDto>>> getActiveSalaries() {
-              List<SalaryResponseDto> allActiveSalaries = service.getAllActiveSalaries();
-     return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "fetch the All Active salary successfully", allActiveSalaries));
+           List<SalaryResponseDto> allActiveSalaries = service.getAllActiveSalaries();
+           return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "fetch the All Active salary successfully", allActiveSalaries));
      }
     
     @PutMapping("updateSal/{salaryId}")
@@ -110,11 +104,10 @@ public class HrController {
     
     @DeleteMapping("deleteSal/{salaryId}")
     public ResponseEntity<ResponseMessage<String>> deleteSalary(@PathVariable Long salaryId) {
-
         String msg = service.deleteSalary(salaryId);
-        return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee deleted successfully", msg));
-         
+        return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Employee deleted successfully", msg));  
     }
+    
     @GetMapping("/getEmp/{id}")
     public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> getEmployee(@PathVariable Long id) {
         EmployeeDetailsResponseDto employee = service.getEmployee(id);
@@ -130,7 +123,7 @@ public class HrController {
     
     @PutMapping("emp/{id}/disable")
     public ResponseEntity<ResponseMessage<?>> disableEmployee(@PathVariable Long id) {
-       String msg = service.disableEmp(id);
+        String msg = service.disableEmp(id);
         return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Employee Disabled successfully", msg));
     }
 
@@ -226,18 +219,14 @@ public class HrController {
     @PostMapping("/job/sendShortlistedEmails")
     public ResponseEntity<ResponseMessage<List<JobApplication>>> sendShortlistedEmails(@RequestBody EmailRequestDto emailRequest) {
         List<JobApplication> updatedApplicants = service.sendEmailsToShortlisted(emailRequest.getSubject(), emailRequest.getMessage());
-        return ResponseEntity.ok(
-            new ResponseMessage<>(200, "OK", "Emails sent to all shortlisted applicants and status updated", updatedApplicants)
-        );
+        return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Emails sent to all shortlisted applicants and status updated", updatedApplicants));
     }
 
     // Send email to all rejected applicants
     @PostMapping("/job/sendRejectedEmails")
     public ResponseEntity<ResponseMessage<List<JobApplication>>> sendRejectedEmails(@RequestBody EmailRequestDto emailRequest) {
         List<JobApplication> updatedApplicants = service.sendEmailsToRejected(emailRequest.getSubject(), emailRequest.getMessage());
-        return ResponseEntity.ok(
-            new ResponseMessage<>(200, "OK", "Emails sent to all rejected applicants and status updated", updatedApplicants)
-        );
+        return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Emails sent to all rejected applicants and status updated", updatedApplicants));
     }
 
     // Send individual invited email and update status

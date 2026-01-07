@@ -48,11 +48,9 @@ public class EmployeeController {
 	
 	@Autowired
 	private EmployeeService employeeService;
-	
 	@Autowired
 	private EmployeeBankDetailsService bankService;
-	
-	@Autowired
+    @Autowired
 	private ProjectService projectService;
 	
 	@GetMapping("/me")
@@ -104,22 +102,18 @@ public class EmployeeController {
    }
     
     @PutMapping("/{id}/profile-picture")
-    public ResponseEntity<ResponseMessage<String>> uploadProfilePicture(
-            @PathVariable Long id,
-            @RequestParam("profileImage") MultipartFile profileImage) {
-
+    public ResponseEntity<ResponseMessage<String>> uploadProfilePicture(@PathVariable Long id,@RequestParam("profileImage") MultipartFile profileImage) {
         String imageUrl = employeeService.uploadProfilePicture(id, profileImage);
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(),"Profile picture uploaded successfully", imageUrl));
     }
+    
     @DeleteMapping("/{id}/profile-picture")
     public ResponseEntity<ResponseMessage<String>> deleteProfilePicture(@PathVariable Long id) {
         boolean deleted = employeeService.deleteProfilePicture(id);
         if (deleted) {
-          return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(),HttpStatus.OK.name(),"Profile picture deleted successfully","Profile image removed from database and folder"));
-        } 
+          return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(),HttpStatus.OK.name(),"Profile picture deleted successfully","Profile image removed from database and folder")); } 
         else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseMessage<>(HttpStatus.NOT_FOUND.value(),HttpStatus.NOT_FOUND.name(),"Profile picture not found",null));
-        }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseMessage<>(HttpStatus.NOT_FOUND.value(),HttpStatus.NOT_FOUND.name(),"Profile picture not found",null)); }
     }
 
     @GetMapping("/{employeeId}/active-projects")
@@ -136,7 +130,6 @@ public class EmployeeController {
    
     @GetMapping("/webclockin/{employeeId}")
     public ResponseEntity<ResponseDTO<EmployeeDTO>> employeeLogin(@PathVariable Long employeeId) { //  MODIFIED
-
         EmployeeDTO empDto = employeeService.login(employeeId);
         ResponseDTO<EmployeeDTO> response =new ResponseDTO<>(empDto, "Employee Login Successful", LocalDateTime.now());
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -144,7 +137,6 @@ public class EmployeeController {
 
     @GetMapping("/webclockout/{employeeId}")
     public ResponseEntity<ResponseDTO<EmployeeDTO>> employeeLogout(@PathVariable Long employeeId) { //  MODIFIED
-
          EmployeeDTO empDto = employeeService.logout(employeeId);
          ResponseDTO<EmployeeDTO> response = new ResponseDTO<>(empDto, "Employee logged out successfully", LocalDateTime.now());
          return new ResponseEntity<>(response, HttpStatus.OK);
@@ -152,16 +144,13 @@ public class EmployeeController {
     
     @PostMapping("/apply-leave")
     public ResponseEntity<ResponseDTO<EmployeeLeaveDTO>> applyLeave(@RequestBody EmployeeLeaveDTO empLeaveDto) {
-
         EmployeeLeaveDTO applyLeave = employeeService.applyLeave(empLeaveDto);
-          System.out.println("===> "+applyLeave);
         ResponseDTO<EmployeeLeaveDTO> response = new ResponseDTO<>(applyLeave, "Leave Applied Successfully", LocalDateTime.now());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/apply-wfh")
     public ResponseEntity<ResponseDTO<EmployeeLeaveDTO>> applyWFH(@RequestBody EmployeeLeaveDTO wfhDto) {
-
         EmployeeLeaveDTO applyWFH = employeeService.applyWFH(wfhDto);
         ResponseDTO<EmployeeLeaveDTO> response = new ResponseDTO<>(applyWFH, "Work From Home Applied Successfully", LocalDateTime.now());
         return new ResponseEntity<>(response, HttpStatus.OK);
