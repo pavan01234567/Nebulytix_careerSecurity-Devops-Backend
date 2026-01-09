@@ -34,6 +34,7 @@ import com.neb.service.ClientService;
 import com.neb.service.ProjectService;
 //import com.neb.dto.project.ProjectsResponseDto;
 import com.neb.util.FileUtil;
+import com.neb.util.ProjectStatus;
 
 import jakarta.transaction.Transactional;
 
@@ -220,11 +221,11 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public ProjectResponseDto updateProjectStatus(Long projectId, String status) {
+  public  ProjectResponseDto updateProjectStatus(Long projectId, ProjectStatus status) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomeException("Project not found with id: " + projectId));
 
-        project.setStatus(status);
+        project.setStatus(ProjectStatus.PLANNED);
         Project save = projectRepository.save(project);
 
         return ProjectResponseDto.fromEntity(project);
@@ -262,7 +263,7 @@ public class ProjectServiceImpl implements ProjectService {
         project.setPriority(dto.getPriority());
         project.setBudget(dto.getBudget());
         project.setRiskLevel(dto.getRiskLevel());
-        project.setStatus("PLANNED");
+        project.setStatus(ProjectStatus.PLANNED);
         project.setProgress(0);
         project.setCreatedDate(LocalDate.now());
 

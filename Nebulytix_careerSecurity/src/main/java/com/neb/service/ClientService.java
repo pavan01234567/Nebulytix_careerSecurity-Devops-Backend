@@ -10,13 +10,15 @@ import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.entity.DailyReport;
 import com.neb.entity.Project;
 import com.neb.entity.Users;
+import com.neb.util.ProjectStatus;
 
 public interface ClientService {
 	
     public ClientProfileDto getMyProfile();
 	public Long createClient(AddClientRequest addClientReq, Users user);
     public List<Project> getProjectsForLoggedInClient();
-    public String getProjectStatus(Long projectId);
+//    public String getProjectStatus(Long projectId);
+    public ProjectStatus getProjectStatus(Long projectId);
     public List<EmployeeProfileDto> getEmployeesByProject(Long projectId);
     public WorkResponseDto assignWorkToEmployee(Long projectId, AddWorkRequestDto dto);
     public List<WorkResponseDto> getWorkByProject(Long projectId);

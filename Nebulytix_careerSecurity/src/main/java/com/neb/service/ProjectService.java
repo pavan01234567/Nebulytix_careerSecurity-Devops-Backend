@@ -11,6 +11,7 @@ import com.neb.dto.UpdateProjectRequestDto;
 import com.neb.dto.project.AddProjectRequestDto;
 import com.neb.dto.project.ProjectsResponseDto;
 import com.neb.entity.Project;
+import com.neb.util.ProjectStatus;
 public interface ProjectService {
 	
 	  public Project addProject(
@@ -25,7 +26,7 @@ public interface ProjectService {
     public ResponseMessage<ProjectsResponseDto> getProjectById(Long id);
     public ResponseMessage<ProjectResponseDto> updateProject(Long id, UpdateProjectRequestDto dto);
     public ResponseMessage<String> deleteProject(Long id);
-    public ProjectResponseDto updateProjectStatus(Long projectId, String status);
+    ProjectResponseDto updateProjectStatus(Long projectId, ProjectStatus status);
     public List<ProjectResponseDto> getProjectsByClient(Long clientId);
     public  ProjectResponseDto addEmployeeToProject(Long projectId, Long employeeId);
     public void removeEmployeeFromProject(Long projectId, Long employeeId);

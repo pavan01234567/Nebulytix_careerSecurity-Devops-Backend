@@ -23,6 +23,7 @@ import com.neb.entity.DailyReport;
 import com.neb.entity.Employee;
 import com.neb.entity.Project;
 import com.neb.service.ClientService;
+import com.neb.util.ProjectStatus;
 
 
 @RestController
@@ -51,11 +52,27 @@ public class ClientController {
     }
 
     //  Get status of a specific project
+//    @PreAuthorize("hasRole('CLIENT')")
+//    @GetMapping("/projects/{projectId}/status")
+//    public ResponseEntity<ResponseMessage<String>> getProjectStatus(@PathVariable Long projectId) {
+//        String status = clientService.getProjectStatus(projectId);
+//        return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", "Project status fetched successfully", status));
+//    }
     @PreAuthorize("hasRole('CLIENT')")
     @GetMapping("/projects/{projectId}/status")
-    public ResponseEntity<ResponseMessage<String>> getProjectStatus(@PathVariable Long projectId) {
-        String status = clientService.getProjectStatus(projectId);
-        return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", "Project status fetched successfully", status));
+    public ResponseEntity<ResponseMessage<ProjectStatus>> getProjectStatus(
+            @PathVariable Long projectId) {
+
+        ProjectStatus status = clientService.getProjectStatus(projectId);
+
+        return ResponseEntity.ok(
+                new ResponseMessage<>(
+                        200,
+                        "SUCCESS",
+                        "Project status fetched successfully",
+                        status
+                )
+        );
     }
 
     //  Get employees working under a specific project

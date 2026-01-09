@@ -2,6 +2,8 @@ package com.neb.dto;
 
 import java.time.LocalDate;
 
+import com.neb.util.ProjectStatus;
+
 import lombok.Data;
 
 @Data
@@ -11,5 +13,5 @@ public class UpdateProjectRequestDto {
     private LocalDate expectedEndDate;
     private String priority;
     private String riskLevel;
-    private String status;
+    private ProjectStatus status;
 }

@@ -7,6 +7,7 @@ import com.neb.dto.EmployeeResponseDto;
 import com.neb.dto.client.ClientProfileDto;
 import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.entity.Project;
+import com.neb.util.ProjectStatus;
 
 import lombok.Data;
 
@@ -22,7 +23,7 @@ public class ProjectsResponseDto {
     private String priority;
     private Double budget;
     private String riskLevel;
-    private String status;
+    private ProjectStatus status;
     private Integer progress;
     private Long clientId;
     private String contractPdfUrl;

@@ -32,6 +32,7 @@ import com.neb.repo.UsersRepository;
 import com.neb.repo.WorkRepository;
 import com.neb.service.ClientService;
 import com.neb.util.AuthUtils;
+import com.neb.util.ProjectStatus;
 
 @Service
 public class ClientServiceImpl implements ClientService{
@@ -86,12 +87,14 @@ public class ClientServiceImpl implements ClientService{
         return projectRepo.findByClient_Id(client.getId());
     }
 
-    @Override
-    public String getProjectStatus(Long projectId) {
-        Project project = projectRepo.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
-        return project.getStatus();
-    }
+      @Override
+      public ProjectStatus getProjectStatus(Long projectId) {
+
+          Project project = projectRepo.findById(projectId)
+                  .orElseThrow(() -> new RuntimeException("Project not found"));
+
+          return project.getStatus(); // ✅ enum → enum
+      }
 
     @Override
     public List<EmployeeProfileDto> getEmployeesByProject(Long projectId) {

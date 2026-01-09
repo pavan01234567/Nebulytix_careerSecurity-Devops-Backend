@@ -50,6 +50,7 @@ import com.neb.service.ClientService;
 import com.neb.service.EmployeeService;
 import com.neb.service.HrService;
 import com.neb.service.ProjectService;
+import com.neb.util.ProjectStatus;
 
 
 
@@ -341,7 +342,7 @@ public class AdminController {
 	    @PutMapping("/{projectId}/status")
 	    public ResponseEntity<ProjectResponseDto> updateProjectStatus(
 	            @PathVariable Long projectId,
-	            @RequestParam String status) {
+	            @RequestParam ProjectStatus status){
 
 	        ProjectResponseDto updatedProject = projectService.updateProjectStatus(projectId, status);
 	        return ResponseEntity.ok(updatedProject);
