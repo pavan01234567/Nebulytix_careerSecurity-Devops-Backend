@@ -83,17 +83,73 @@ public class HrController {
         return ResponseEntity.ok(new ResponseMessage(200, "OK", "User created successfully"));
     }
     
-   //====================== salary part ==============================
+//   //====================== salary part ==============================
+//    @PostMapping("/add/salary")
+//    public ResponseEntity<ResponseMessage<SalaryResponseDto>> createSalary(@RequestBody SalaryRequestDto requestDto) {
+//    	SalaryResponseDto addSalary = service.addSalary(requestDto);
+//    	return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "salary added successfully", addSalary));
+//    }
+//    
+//    @GetMapping("/active/{employeeId}")
+//    public ResponseEntity<ResponseMessage<SalaryResponseDto>> getActiveSalary(@PathVariable Long employeeId) {
+//         SalaryResponseDto activeSalary = service.getActiveSalary(employeeId);
+//         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "fetch the salary successfully", activeSalary));
+//    }
     @PostMapping("/add/salary")
-    public ResponseEntity<ResponseMessage<SalaryResponseDto>> createSalary(@RequestBody SalaryRequestDto requestDto) {
-    	SalaryResponseDto addSalary = service.addSalary(requestDto);
-    	return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "salary added successfully", addSalary));
+    public ResponseEntity<ResponseMessage<SalaryResponseDto>> createSalary(
+            @RequestBody SalaryRequestDto requestDto) {
+
+        SalaryResponseDto addSalary = service.addSalary(requestDto);
+
+        return ResponseEntity.ok(
+            new ResponseMessage<>(
+                HttpStatus.OK.value(),
+                HttpStatus.OK.name(),
+                "Salary added successfully",
+                addSalary
+            )
+        );
     }
-    
     @GetMapping("/active/{employeeId}")
-    public ResponseEntity<ResponseMessage<SalaryResponseDto>> getActiveSalary(@PathVariable Long employeeId) {
-         SalaryResponseDto activeSalary = service.getActiveSalary(employeeId);
-         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "fetch the salary successfully", activeSalary));
+    public ResponseEntity<ResponseMessage<SalaryResponseDto>> getActiveSalary(
+            @PathVariable Long employeeId) {
+
+        try {
+            SalaryResponseDto dto = service.getActiveSalary(employeeId);
+
+            // ✅ If salary not yet added — return empty response
+            if (dto == null) {
+                return ResponseEntity.ok(
+                    new ResponseMessage<>(
+                        HttpStatus.OK.value(),
+                        HttpStatus.OK.name(),
+                        "Salary not yet added for this employee",
+                        null
+                    )
+                );
+            }
+
+            return ResponseEntity.ok(
+                new ResponseMessage<>(
+                    HttpStatus.OK.value(),
+                    HttpStatus.OK.name(),
+                    "Salary fetched successfully",
+                    dto
+                )
+            );
+
+        } catch (Exception e) {
+
+           
+            return ResponseEntity.ok(
+                new ResponseMessage<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                    "Unable to fetch salary",
+                    null
+                )
+            );
+        }
     }
     
     @GetMapping("listsal/active")
@@ -363,8 +419,8 @@ public class HrController {
 	    return new ResponseEntity<>(response, HttpStatus.OK);
 	}
     @GetMapping("/getEmpList")
-    public ResponseEntity<ResponseMessage<List<EmployeeDetailsResponseDto>>> getEmployeeList() {
-        List<EmployeeDetailsResponseDto> employeeList = service.getEmployeeList();
+    public ResponseEntity<ResponseMessage<List<EmployeeProfileDto>>> getEmployeeList() {
+        List<EmployeeProfileDto> employeeList = service.getEmployeeList();
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "All Employee fetched successfully", employeeList));
     }
 	 

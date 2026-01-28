@@ -32,6 +32,7 @@ import com.neb.dto.EmployeeRegulationDTO;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.TodayAttendanceCountDTO;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.salary.SalaryRequestDto;
 import com.neb.dto.salary.SalaryResponseDto;
 import com.neb.entity.DailyReport;
@@ -398,6 +399,39 @@ public class HrServiceImpl implements HrService {
     
 	}
 
+//	@Override
+//	@Transactional
+//	public SalaryResponseDto addSalary(SalaryRequestDto salRequestDto) 
+//	{
+//		 Employee employee = empRepo.findById(salRequestDto.getEmployeeId())
+//		            .orElseThrow(() ->new EmployeeNotFoundException("Employee not found with id: " + salRequestDto.getEmployeeId()));
+//
+//        salRepo.findByEmployeeIdAndActiveTrue(employee.getId())
+//                .ifPresent(existing -> {
+//                    if (!salRequestDto.getEffectiveFrom().isAfter(LocalDate.now())) {
+//                        existing.setActive(false);
+//                        salRepo.save(existing);
+//                    }
+//                });
+//
+//        EmployeeSalary salary = mapper.map(salRequestDto, EmployeeSalary.class);
+//               salary.setId(null);
+//               salary.setEmployee(employee);
+//               salary.setActive(!salRequestDto.getEffectiveFrom().isAfter(LocalDate.now()));
+//               
+//       return  mapper.map(salRepo.save(salary),SalaryResponseDto.class);
+//	}
+//
+//	@Override
+//	public SalaryResponseDto getActiveSalary(Long employeeId) {
+//		  Optional<EmployeeSalary> salaryopt = salRepo.findByEmployeeIdAndActiveTrue(employeeId);
+//             if(salaryopt != null) {
+//            	 return mapper.map(salaryopt.get(), SalaryResponseDto.class); 
+//             }
+//             else {
+//            	 return null;
+//             }
+//	}
 	@Override
 	@Transactional
 	public SalaryResponseDto addSalary(SalaryRequestDto salRequestDto) 
@@ -405,7 +439,7 @@ public class HrServiceImpl implements HrService {
 		 Employee employee = empRepo.findById(salRequestDto.getEmployeeId())
 		            .orElseThrow(() ->new EmployeeNotFoundException("Employee not found with id: " + salRequestDto.getEmployeeId()));
 
-        salRepo.findByEmployeeIdAndActiveTrue(employee.getId())
+        salRepo.findByEmployee_IdAndActiveTrue(employee.getId())
                 .ifPresent(existing -> {
                     if (!salRequestDto.getEffectiveFrom().isAfter(LocalDate.now())) {
                         existing.setActive(false);
@@ -421,15 +455,33 @@ public class HrServiceImpl implements HrService {
        return  mapper.map(salRepo.save(salary),SalaryResponseDto.class);
 	}
 
+ 
 	@Override
+	@Transactional
 	public SalaryResponseDto getActiveSalary(Long employeeId) {
-		  Optional<EmployeeSalary> salaryopt = salRepo.findByEmployeeIdAndActiveTrue(employeeId);
-             if(salaryopt != null) {
-            	 return mapper.map(salaryopt.get(), SalaryResponseDto.class); 
-             }
-             else {
-            	 return null;
-             }
+
+	    Optional<EmployeeSalary> optionalSalary =
+	            salRepo.findByEmployee_IdAndActiveTrue(employeeId);
+
+	    // ✅ Do NOT throw exception if not found
+	    if (optionalSalary.isEmpty()) {
+	        return null;
+	    }
+
+	    EmployeeSalary salary = optionalSalary.get();
+
+	    SalaryResponseDto dto = new SalaryResponseDto();
+	    dto.setId(salary.getId());
+	    dto.setEmployeeId(salary.getEmployee().getId());
+	    dto.setBasicSalary(salary.getBasicSalary());
+	    dto.setHra(salary.getHra());
+	    dto.setAllowance(salary.getAllowance());
+	    dto.setDeductions(salary.getDeductions());
+	    dto.setNetSalary(salary.getNetSalary());
+	    dto.setEffectiveFrom(salary.getEffectiveFrom());
+	    dto.setActive(salary.isActive());
+
+	    return dto;
 	}
 
 	@Override
@@ -820,7 +872,7 @@ public class HrServiceImpl implements HrService {
 			            .toList();
 			}
 		 @Override
-		 public List<EmployeeDetailsResponseDto> getEmployeeList() {
+		 public List<EmployeeProfileDto> getEmployeeList() {
 
 		     Set<Role> excludedRoles = Set.of(Role.ROLE_ADMIN);
 
@@ -831,8 +883,30 @@ public class HrServiceImpl implements HrService {
 		     }
 
 		     return employees.stream()
-		             .map(emp -> mapper.map(emp, EmployeeDetailsResponseDto.class))
-		             .collect(Collectors.toList());
+				        .map(emp -> {
+				            EmployeeProfileDto dto = new EmployeeProfileDto();
+				            dto.setId(emp.getId());
+				            dto.setFirstName(emp.getFirstName());
+				            dto.setLastName(emp.getLastName());
+				            dto.setDesignation(emp.getDesignation());
+				            dto.setDepartment(emp.getDepartment());
+				            dto.setCardNumber(emp.getCardNumber());
+				            dto.setGender(emp.getGender());
+				            dto.setJoiningDate(emp.getJoiningDate());
+				            dto.setSalary(emp.getSalary());
+				            dto.setProfilePictureUrl(emp.getProfilePictureUrl());
+				            dto.setMobile(emp.getMobile());
+				            dto.setEmpStatus(emp.getEmpStatus());
+				            // From User entity
+				            if (emp.getUser() != null) {
+				                dto.setEmail(emp.getUser().getEmail());
+				                dto.setUserEnabled(emp.getUser().isEnabled());
+				            }
+
+				            return dto;
+				        })
+				        .collect(Collectors.toList());
+
 		 }
 
 

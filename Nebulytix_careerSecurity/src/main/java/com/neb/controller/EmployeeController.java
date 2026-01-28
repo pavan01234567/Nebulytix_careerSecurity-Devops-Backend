@@ -189,10 +189,20 @@ public class EmployeeController {
    		return ResponseEntity.ok(new ResponseDTO<>(employeeService.regularize(regulation), "Applied Succesfully"));
    	}
 
-    @GetMapping("get/{id}/bank-detail")
-    public ResponseEntity<ResponseMessage<EmployeeBankDetailsResponse>> getBankDetails(@PathVariable Long id) {
-        EmployeeBankDetailsResponse response = bankService.getBankDetailsByEmployeeId(id);
-        return ResponseEntity.ok(new ResponseMessage<>(200, "OK","Bank details fetched successfully", response));
-    }
+   	@GetMapping("get/{id}/bank-detail")
+   	public ResponseEntity<ResponseMessage<EmployeeBankDetailsResponse>> getBankDetails(@PathVariable Long id) {
+   	    EmployeeBankDetailsResponse response = bankService.getBankDetailsByEmployeeId(id);
+
+   	    if (response == null) {
+   	        // Return OK with null, frontend can handle showing "Add bank details"
+   	        return ResponseEntity.ok(
+   	            new ResponseMessage<>(200, "OK", "No bank details found for this employee", null)
+   	        );
+   	    }
+
+   	    return ResponseEntity.ok(
+   	        new ResponseMessage<>(200, "OK", "Bank details fetched successfully", response)
+   	    );
+   	}
   
 }

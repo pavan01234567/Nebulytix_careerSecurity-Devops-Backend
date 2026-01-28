@@ -277,12 +277,18 @@ public class AdminController {
 	        return ResponseEntity.ok(projectService.deleteProject(projectId));
 	    }
 	    
-	    @PreAuthorize("hasRole('ADMIN')")
 	    @PutMapping("/{projectId}/status")
-	    public ResponseEntity<ProjectResponseDto> updateProjectStatus(@PathVariable Long projectId,@RequestParam ProjectStatus status) {
-            ProjectResponseDto updatedProject = projectService.updateProjectStatus(projectId, status);
+	    @PreAuthorize("hasRole('ADMIN')")
+	    public ResponseEntity<ProjectResponseDto> updateProjectStatus(
+	            @PathVariable Long projectId,
+	            @RequestParam ProjectStatus status) {
+
+	        ProjectResponseDto updatedProject =
+	                projectService.updateProjectStatus(projectId, status);
+
 	        return ResponseEntity.ok(updatedProject);
 	    }
+
 	    
 	    @GetMapping("/projects/client/{clientId}")
 	    public ResponseEntity<ResponseMessage<List<ProjectResponseDto>>> getProjectsByClient(@PathVariable Long clientId) {

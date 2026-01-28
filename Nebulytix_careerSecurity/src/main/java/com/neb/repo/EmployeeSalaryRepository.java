@@ -12,4 +12,5 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, 
     public Optional<EmployeeSalary> findByEmployeeIdAndActiveTrue(Long employeeId);
     public List<EmployeeSalary> findByActiveTrue();
     List<EmployeeSalary> findByEmployeeIdOrderByEffectiveFromDesc(Long employeeId);
+    Optional<EmployeeSalary> findByEmployee_IdAndActiveTrue(Long employeeId);
 }

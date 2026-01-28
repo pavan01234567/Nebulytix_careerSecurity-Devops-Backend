@@ -219,17 +219,33 @@ public class ProjectServiceImpl implements ProjectService {
         return dto;
     }
 
+//    @Override
+//    @Transactional
+//  public  ProjectResponseDto updateProjectStatus(Long projectId, ProjectStatus status) {
+//        Project project = projectRepository.findById(projectId)
+//                .orElseThrow(() -> new CustomeException("Project not found with id: " + projectId));
+//
+//        project.setStatus(ProjectStatus.PLANNED);
+//        Project save = projectRepository.save(project);
+//
+//        return ProjectResponseDto.fromEntity(project);
+//    }
     @Override
     @Transactional
-  public  ProjectResponseDto updateProjectStatus(Long projectId, ProjectStatus status) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new CustomeException("Project not found with id: " + projectId));
+    public ProjectResponseDto updateProjectStatus(Long projectId, ProjectStatus status) {
 
-        project.setStatus(ProjectStatus.PLANNED);
-        Project save = projectRepository.save(project);
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomeException(
+                        "Project not found with id: " + projectId));
+
+        
+        project.setStatus(status);
+
+        projectRepository.save(project);
 
         return ProjectResponseDto.fromEntity(project);
     }
+
 
     @Override
     public List<ProjectResponseDto> getProjectsByClient(Long clientId) {

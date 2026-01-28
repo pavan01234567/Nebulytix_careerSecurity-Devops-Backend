@@ -70,11 +70,9 @@ public class EmployeeBankDetailsServiceImpl implements EmployeeBankDetailsServic
 
 	@Override
 	public EmployeeBankDetailsResponse getBankDetailsByEmployeeId(Long id) {
-		empRepo.findById(id).orElseThrow(() -> new EmployeeNotFoundException("Employee not found"));
-		EmployeeBankDetails bankDetails = bankRepo.findByEmployeeId(id)
-                                                   .orElseThrow(() ->new CustomeException("Bank details not found for this employee"));
-        return mapper.map(bankDetails,EmployeeBankDetailsResponse.class);
-        
+	    Employee employee = empRepo.findById(id).orElseThrow(() -> new EmployeeNotFoundException("Employee not found"));
+        // Return null if no bank details exist
+	    return bankRepo.findByEmployeeId(id).map(bd -> mapper.map(bd, EmployeeBankDetailsResponse.class)).orElse(null);
 	}
 
    

@@ -19,7 +19,6 @@ public class EmployeeDTO {
 	private LocalDateTime loginTime;
 	private LocalDateTime logoutTime;
 	private String empStatus;
-
 	private String dayStatus;
 	private String arrivalTime;
 

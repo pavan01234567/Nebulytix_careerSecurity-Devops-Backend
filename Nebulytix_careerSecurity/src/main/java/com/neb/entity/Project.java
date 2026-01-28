@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.neb.util.ProjectStatus;
+import com.neb.util.ProjectStatusConverter;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,8 +45,11 @@ public class Project {
 
     private String priority;        // low, medium, high, critical
 
-@Enumerated(EnumType.STRING)
-private ProjectStatus status; // planned, ongoing, on-hold, completed, cancelled
+//@Enumerated(EnumType.STRING)
+//private ProjectStatus status; 
+    // planned, ongoing, on-hold, completed, cancelled
+    @Convert(converter = ProjectStatusConverter.class)
+    private ProjectStatus status;
 
     private Double budget;
     private Double spentAmount = 0.0;

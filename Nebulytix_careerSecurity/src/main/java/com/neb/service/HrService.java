@@ -16,6 +16,7 @@ import com.neb.dto.EmployeeRegulationDTO;
 import com.neb.dto.JobDetailsDto;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.TodayAttendanceCountDTO;
+import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.salary.SalaryRequestDto;
 import com.neb.dto.salary.SalaryResponseDto;
 import com.neb.entity.Employee;
@@ -64,7 +65,7 @@ public interface HrService {
 			ApprovalStatus status);
 	public List<EmployeeRegulationDTO> regulation(ApprovalStatus status) ;
 	
-	public List<EmployeeDetailsResponseDto> getEmployeeList();
+	public List<EmployeeProfileDto> getEmployeeList();
 
 	
 

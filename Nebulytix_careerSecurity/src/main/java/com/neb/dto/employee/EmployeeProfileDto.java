@@ -10,6 +10,7 @@ public class EmployeeProfileDto {
     private String lastName;
     private String designation;
     private String department;
+    private String cardNumber;
     private String email;
     private String mobile;
     private String gender;
