@@ -21,6 +21,9 @@ public class Users {
 
     @Column(nullable = false)
     private String password;
+    
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
 
     @Column(nullable = false)
     private boolean enabled = true;
@@ -46,8 +49,6 @@ public class Users {
         this.password = password;
         this.roles = roles == null ? new HashSet<>() : roles;
     }
-
-    // convenience
     public void addRole(Role role) { this.roles.add(role); }
     public void removeRole(Role role) { this.roles.remove(role); }
 }

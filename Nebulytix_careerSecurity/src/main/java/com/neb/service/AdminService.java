@@ -35,7 +35,7 @@ public interface AdminService {
     public EmployeeDetailsResponseDto getEmployee(Long id);
     public String deleteHr(Long id);
     public String deleteClient(Long id);
-    public byte[] generateDailyReport(LocalDate date)throws Exception;
+    public String generateDailyReport(LocalDate date) throws Exception;
     public EmployeeDetailsResponseDto updateHrDetails(Long id, UpdateEmployeeRequestDto dto);
     public String deleteAdmin(Long id);
     public List<AdminProfileDto> getOnlyAdmin();
@@ -49,5 +49,8 @@ public interface AdminService {
 	public String enableAdmin(Long id);
 	public String disableClient(Long id);
 	public String enableClient(Long id);
+	String saveProfilePictureUrl(Long employeeId, MultipartFile file);
 
+
+	
 }

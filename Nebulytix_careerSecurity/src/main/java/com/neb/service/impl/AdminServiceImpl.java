@@ -1,22 +1,16 @@
 package com.neb.service.impl;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.neb.constants.Role;
 import com.neb.constants.WorkStatus;
 import com.neb.dto.AddWorkRequestDto;
 import com.neb.dto.EmployeeDetailsResponseDto;
@@ -31,18 +25,21 @@ import com.neb.dto.user.RegisterNewClientRequest;
 import com.neb.dto.user.RegisterNewUerRequest;
 import com.neb.dto.user.UserDto;
 import com.neb.entity.Client;
+import com.neb.entity.DailyReport;
 import com.neb.entity.Employee;
 import com.neb.entity.Users;
 import com.neb.entity.Work;
 import com.neb.exception.CustomeException;
 import com.neb.exception.ResourceNotFoundException;
 import com.neb.repo.ClientRepository;
+import com.neb.repo.DailyReportRepository;
 import com.neb.repo.EmployeeRepository;
 import com.neb.repo.ProjectRepository;
 import com.neb.repo.UsersRepository;
 import com.neb.repo.WorkRepository;
 import com.neb.service.AdminService;
 import com.neb.service.ClientService;
+import com.neb.service.CloudinaryService;
 import com.neb.service.EmployeeService;
 import com.neb.service.UsersService;
 import com.neb.util.AuthUtils;
@@ -59,6 +56,7 @@ public class AdminServiceImpl implements AdminService{
 	
 	@Autowired
 	private EmployeeService employeeService;
+	 
 	
 	@Autowired
     private WorkRepository workRepo;
@@ -76,60 +74,45 @@ public class AdminServiceImpl implements AdminService{
     
     @Autowired
     private UsersRepository usersRepository;
+    @Autowired
+    private ReportGeneratorPdf reportGeneratorPdf;
+
+    @Autowired
+    private DailyReportRepository dailyReportRepo;
     
-    @Value("${task.attachment}")
-    private String uploadDir;
+    
     @Autowired
     private ClientRepository  clientRepo;
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
     
     
     
     @Override
     @Transactional
-	public Long createAdmin(UserDto userReq) {
-		
-    	Users user = usersService.createUser(userReq);
-		return user.getId();
-	}
+    public Long createAdmin(UserDto userReq) {
+        Users user = usersService.createUser(userReq);
+        return user.getId();
+    }
 
-	@Override
-	@Transactional
-	public Long createEmployee(RegisterNewUerRequest empReq) {
-		
-		Users user = usersService.createUser(empReq.getUserDto());
-		
-		if(user!=null) {
-			
-			Long employeeId = employeeService.createEmployee(empReq.getEmpReq(), user);
-			if(employeeId!=null) {
-				return user.getId();
-			}
-		}
-		return null;
-	}
+    @Override
+    @Transactional
+    public Long createEmployee(RegisterNewUerRequest empReq) {
+        Users user = usersService.createUser(empReq.getUserDto());
+        return employeeService.createEmployee(empReq.getEmpReq(), user);
+    }
 
-	@Override
-	@Transactional
-	public Long createClient(RegisterNewClientRequest clientReq) {
-		
-		Users user = usersService.createUser(clientReq.getUserDto());
-		
-		if(user!=null) {
-			Long clientId = clientService.createClient(clientReq.getClientReq(), user);
-			if(clientId!=null) {
-				return user.getId();
-			}
-		}
-		
-		return null;
-	}
+    @Override
+    @Transactional
+    public Long createClient(RegisterNewClientRequest clientReq) {
+        Users user = usersService.createUser(clientReq.getUserDto());
+        return clientService.createClient(clientReq.getClientReq(), user);
+    }
 	
-	@Override
-	public AdminProfileDto getMyProfile() {
-		
-		String email = AuthUtils.getCurrentUserEmail();
-        if (email == null) throw new RuntimeException("Not authenticated");
-
+    @Override
+    public AdminProfileDto getMyProfile() {
+        String email = AuthUtils.getCurrentUserEmail();
         Users user = usersRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin not found"));
 
@@ -137,14 +120,16 @@ public class AdminServiceImpl implements AdminService{
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setEnabled(user.isEnabled());
-
+        dto.setProfilePictureUrl(user.getProfilePictureUrl());
         return dto;
-	}
-    
-           //adding work 
-    public String assignWork(AddWorkRequestDto request,MultipartFile file) {
+    }
+
+    @Override
+    @Transactional
+    public String assignWork(AddWorkRequestDto request, MultipartFile file) {
+
         Employee emp = empRepo.findById(request.getEmployeeId())
-                .orElseThrow(() -> new CustomeException("Employee not found with id :"+request.getEmployeeId()));
+                .orElseThrow(() -> new CustomeException("Employee not found"));
 
         Work work = new Work();
         work.setTitle(request.getTitle());
@@ -153,51 +138,57 @@ public class AdminServiceImpl implements AdminService{
         work.setDueDate(request.getDueDate());
         work.setStatus(WorkStatus.ASSIGNED);
         work.setEmployee(emp);
-        
+
+        // ✅ CLOUDINARY FILE UPLOAD
         if (file != null && !file.isEmpty()) {
-            // validate PDF
+
             if (!"application/pdf".equals(file.getContentType())) {
-                throw new CustomeException("Only PDF attachment allowed");
+                throw new CustomeException("Only PDF files are allowed");
             }
-            
+
             try {
-            	// ensure directory exists
-                Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-                Files.createDirectories(uploadPath);
+                String fileUrl = cloudinaryService.uploadFile(
+                        file.getBytes(),
+                        "task_" + System.currentTimeMillis(),
+                        "tasks",
+                        "raw"
+                );
 
-                String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-                // optionally add unique suffix
-                String fileName = System.currentTimeMillis() + "_" + originalFilename;
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                work.setAttachmentUrl(fileUrl);
 
-                // set URL or path in work
-                work.setAttachmentUrl("/uploads/tasks/" + fileName);
-
-            }catch (IOException ex) {
-                throw new CustomeException("Could not store file. Error: " + ex.getMessage());
+            } catch (Exception e) {
+                throw new CustomeException("File upload failed: " + e.getMessage());
             }
         }
-        
-        Work savedWork = workRepo.save(work);
-        
-        if(savedWork!=null) {
-        	return "Task Assigned Successfully";
-        }
-        else
-        return "failed to assign task";
+
+        workRepo.save(work);
+        return "Task assigned successfully";
     }
 
+    @Override
     public List<WorkResponseDto> getAllWorks(Long empId) {
-    	List<Work> allWork = workRepo.findByEmployeeId(empId);
-    	if(allWork==null) {
-    		throw new CustomeException("works not found");
-    	}
-        return allWork
+        return workRepo.findByEmployeeId(empId)
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
-    	
+    }
+
+    private WorkResponseDto mapToDto(Work work) {
+        WorkResponseDto dto = new WorkResponseDto();
+        dto.setId(work.getId());
+        dto.setTitle(work.getTitle());
+        dto.setDescription(work.getDescription());
+        dto.setAssignedDate(work.getAssignedDate());
+        dto.setDueDate(work.getDueDate());
+        dto.setStatus(work.getStatus());
+        dto.setEmployeeId(work.getEmployee().getId());
+        dto.setEmployeeName(
+                work.getEmployee().getFirstName() + " " +
+                work.getEmployee().getLastName()
+        );
+        dto.setAttachmentUrl(work.getAttachmentUrl());
+        dto.setReportAttachmentUrl(work.getReportAttachmentUrl());
+        return dto;
     }
 
     public List<WorkResponseDto> getWorkByEmployee(Long empId) {
@@ -213,24 +204,6 @@ public class AdminServiceImpl implements AdminService{
     
     }
        
-    private WorkResponseDto mapToDto(Work work) {
-        WorkResponseDto dto = new WorkResponseDto();
-        dto.setId(work.getId());
-        dto.setTitle(work.getTitle());
-        dto.setDescription(work.getDescription());
-        dto.setAssignedDate(work.getAssignedDate());
-        dto.setDueDate(work.getDueDate());
-        dto.setStatus(work.getStatus());
-        dto.setReportDetails(work.getReportDetails());
-        dto.setSubmittedDate(work.getSubmittedDate());
-        dto.setEmployeeId(work.getEmployee().getId());
-        dto.setEmployeeName(work.getEmployee().getFirstName() + " " + work.getEmployee().getLastName());
-        //dto.setEmployeeEmail(work.getEmployee().getEmail());
-        dto.setAttachmentUrl(work.getAttachmentUrl());
-        dto.setReportAttachmentUrl(work.getReportAttachmentUrl());
-        return dto;
-    }
-
 	@Override
 	public String deleteHr(Long id) {
 		
@@ -345,17 +318,6 @@ public class AdminServiceImpl implements AdminService{
 		return mapper.map(emp, EmployeeDetailsResponseDto.class);	
 	}
 
-
-//	@Override
-//	public byte[] generateDailyReport(LocalDate date) throws Exception {
-//	    List<Work> works = workRepo.findBySubmittedDate(date);
-//	    if (works == null || works.isEmpty()) {
-//	        // error handling
-//	    }
-//	    ReportGeneratorPdf pdfGenerator = new ReportGeneratorPdf();
-//	    byte[] dailyReportPDF = pdfGenerator.generateReportPDF(works, date);
-//	    return dailyReportPDF;
-//	}
 	
 	@Override
 	public EmployeeDetailsResponseDto updateHrDetails(Long id, UpdateEmployeeRequestDto updateReq) {
@@ -587,9 +549,74 @@ public class AdminServiceImpl implements AdminService{
 	}
 
 	@Override
-	public byte[] generateDailyReport(LocalDate date) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+	@Transactional
+	public String generateDailyReport(LocalDate date) throws Exception {
+
+	    // 1️⃣ Fetch reports from DB
+	    List<DailyReport> reports =
+	            dailyReportRepo.findByReportDate(date);
+
+	    if (reports == null || reports.isEmpty()) {
+	        throw new CustomeException(
+	                "No daily reports found for date: " + date);
+	    }
+
+	    // 2️⃣ Generate PDF (byte[])
+	    byte[] pdfBytes =
+	            reportGeneratorPdf.generateDailyReportForEmployees(
+	                    reports, date);
+
+	    if (pdfBytes == null || pdfBytes.length == 0) {
+	        throw new CustomeException("PDF generation failed");
+	    }
+
+	    // 3️⃣ Upload to Cloudinary
+	    String fileName =
+	            "Daily_Report_" + date + "_" + System.currentTimeMillis();
+
+	    String pdfUrl = cloudinaryService.uploadFile(
+	            pdfBytes,
+	            fileName,
+	            "daily-reports",
+	            "raw"
+	    );
+
+	    // 4️⃣ Return Cloudinary URL
+	    return pdfUrl;
 	}
+
+	@Override
+	@Transactional
+	public String saveProfilePictureUrl(Long adminId, MultipartFile file) {
+	    if (file == null || file.isEmpty()) {
+	        throw new CustomeException("No file provided for upload");
+	    }
+
+	    // 1️⃣ Fetch admin user
+	    Users admin = usersRepository.findById(adminId)
+	            .orElseThrow(() -> new CustomeException("Admin not found with id: " + adminId));
+
+	    // 2️⃣ Only allow ADMIN role
+	    if (!admin.getRoles().contains(Role.ROLE_ADMIN)) {
+	        throw new CustomeException("Only admins can update their profile picture");
+	    }
+
+	    try {
+	        // 3️⃣ Upload to Cloudinary
+	        String fileName = "admin_profile_" + adminId + "_" + System.currentTimeMillis();
+	        String imageUrl = cloudinaryService.uploadFile(file, "admin-profile", "image");
+
+	        // 4️⃣ Save URL to DB
+	        admin.setProfilePictureUrl(imageUrl);
+	        usersRepository.save(admin);
+
+	        return imageUrl;
+
+	    } catch (Exception e) {
+	        throw new CustomeException("Profile picture upload failed: " + e.getMessage());
+	    }
+	}
+
+
 
 }

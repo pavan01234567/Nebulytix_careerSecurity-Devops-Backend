@@ -3,13 +3,12 @@ package com.neb.controller;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 
 import com.neb.dto.AddJobRequestDto;
 import com.neb.dto.AssignLeaveBalanceDTO;
@@ -83,18 +81,6 @@ public class HrController {
         return ResponseEntity.ok(new ResponseMessage(200, "OK", "User created successfully"));
     }
     
-//   //====================== salary part ==============================
-//    @PostMapping("/add/salary")
-//    public ResponseEntity<ResponseMessage<SalaryResponseDto>> createSalary(@RequestBody SalaryRequestDto requestDto) {
-//    	SalaryResponseDto addSalary = service.addSalary(requestDto);
-//    	return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "salary added successfully", addSalary));
-//    }
-//    
-//    @GetMapping("/active/{employeeId}")
-//    public ResponseEntity<ResponseMessage<SalaryResponseDto>> getActiveSalary(@PathVariable Long employeeId) {
-//         SalaryResponseDto activeSalary = service.getActiveSalary(employeeId);
-//         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "fetch the salary successfully", activeSalary));
-//    }
     @PostMapping("/add/salary")
     public ResponseEntity<ResponseMessage<SalaryResponseDto>> createSalary(
             @RequestBody SalaryRequestDto requestDto) {
@@ -196,13 +182,12 @@ public class HrController {
     }
 
     //========================= paySlip ======================
-    @GetMapping("/payslip/{id}/download")
-    public ResponseEntity<byte[]> download(@PathVariable Long id) throws Exception {
-        byte[] pdf = service.downloadPayslip(id);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDisposition(ContentDisposition.attachment().filename("payslip_" + id + ".pdf").build());
-        return ResponseEntity.ok().headers(headers).body(pdf);
+    @GetMapping("/payslip/{id}/url")
+    public ResponseEntity<ResponseMessage<String>> getPayslipUrl(@PathVariable Long id) throws Exception {
+        String url = service.getPayslipUrl(id);
+        return ResponseEntity.ok(
+                new ResponseMessage<>(200, "OK", "Payslip URL fetched successfully", url)
+        );
     }
 
     @GetMapping("/payslip/{employeeId}")
@@ -243,35 +228,46 @@ public class HrController {
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "All jobs fetched successfully", allJobs));
     }
    
+//    
     @PostMapping("/dailyReport/generate")
     public ResponseEntity<ResponseMessage<String>> generateDailyReport() {
-        LocalDate d = LocalDate.now();
-        String fileUrlOrMsg = service.generateDailyReport(d);
 
-        if (fileUrlOrMsg == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseMessage<>(500, "ERROR", "Failed to generate report", null));
-        }
+        LocalDate date = LocalDate.now();
+        String reportUrl = service.generateDailyReport(date);
 
-        if (fileUrlOrMsg.startsWith("/reports/")) {
-            return ResponseEntity.ok(
-                    new ResponseMessage<>(200, "OK", "Report generated", fileUrlOrMsg));
-        } else {
+        if (reportUrl == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseMessage<>(404, "NOT_FOUND", fileUrlOrMsg, null));
+                    .body(new ResponseMessage<>(
+                            404, "NOT_FOUND",
+                            "No daily reports found for " + date, null));
         }
+
+        return ResponseEntity.ok(
+                new ResponseMessage<>(
+                        200, "OK",
+                        "Daily report generated and uploaded",
+                        reportUrl));
     }
-
-
     @GetMapping("/dailyReport/url")
     public ResponseEntity<ResponseMessage<String>> getDailyReportUrl() {
-        LocalDate dt = LocalDate.now();
-        String fullUrl = service.getDailyReportUrl(dt);
-        if (fullUrl == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseMessage<>(404, "NOT_FOUND", "No report for date: " + dt, null));
+
+        LocalDate date = LocalDate.now();
+        String url = service.getDailyReportUrl(date);
+
+        if (url == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseMessage<>(
+                            404, "NOT_FOUND",
+                            "No report available for " + date, null));
         }
-        return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Report URL fetched", fullUrl));
+
+        return ResponseEntity.ok(
+                new ResponseMessage<>(
+                        200, "OK",
+                        "Report URL fetched",
+                        url));
     }
+
 
     // Update applicant status
     @PutMapping("/job/updateStatus/{applicationId}/{status}")
@@ -424,5 +420,20 @@ public class HrController {
         return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "All Employee fetched successfully", employeeList));
     }
 	 
+    @PutMapping("/{id}/profile-picture")
+    public ResponseEntity<ResponseMessage<String>> uploadProfilePicture(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload 
+    ) {
+        
+        String imageUrl = payload.get("profilePictureUrl");
+        
+       
+        String updatedUrl = employeeService.saveProfilePictureUrl(id, imageUrl); 
+        
+        return ResponseEntity.ok(
+            new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Profile picture updated successfully", updatedUrl)
+        );
+    }
 
 }

@@ -12,7 +12,6 @@ import com.neb.entity.DailyReport;
 
 public interface DailyReportRepository extends JpaRepository<DailyReport, Long> {
     List<DailyReport> findByReportDate(LocalDate reportDate);
-	Optional<DailyReport> findByEmployeeIdAndReportDate(Long employeeId, LocalDate reportDate);
 	List<DailyReport> findByEmployee_Project_Id(Long projectId);
 	 @Query("""
 		        SELECT dr
@@ -21,4 +20,10 @@ public interface DailyReportRepository extends JpaRepository<DailyReport, Long> 
 		        WHERE dr.reportDate = :date
 		    """)
 		    List<DailyReport> findReportsWithEmployee(@Param("date") LocalDate date);
+	 
+	 
+	   Optional<DailyReport> findByEmployeeIdAndReportDate(
+	            Long employeeId, LocalDate reportDate);
+
+	    List<DailyReport> findAllByReportDate(LocalDate reportDate);
 }

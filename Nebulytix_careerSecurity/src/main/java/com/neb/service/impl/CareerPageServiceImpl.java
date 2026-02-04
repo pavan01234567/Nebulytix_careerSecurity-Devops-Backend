@@ -20,13 +20,13 @@ import com.neb.dto.AddJobApplicationRequestDto;
 import com.neb.dto.AddJobApplicationResponseDto;
 import com.neb.dto.JobApplicationDto;
 import com.neb.dto.JobDetailsDto;
-
 import com.neb.entity.Job;
 import com.neb.entity.JobApplication;
 import com.neb.exception.CustomeException;
 import com.neb.repo.JobApplicationRepository;
 import com.neb.repo.JobRepository;
 import com.neb.service.CareerPageService;
+import com.neb.service.CloudinaryService;
 import com.neb.service.EmailService;
 
 @Service
@@ -44,94 +44,114 @@ public class CareerPageServiceImpl implements CareerPageService {
     @Autowired
     private EmailService emailService;
 
-    @Value("${application.resume}")
-    private String uploadDir;
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+   
+    @Value("${cloudinary.folder.resumes}")
+    private String resumeFolder;
     
     @Override
     public JobDetailsDto getJobById(Long id) {
-    	
-        Job job = jobRepository.findById(id).orElseThrow(() -> new CustomeException("Job not found with id: " + id));
-        
+
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new CustomeException("Job not found with id: " + id));
+
         LocalDate today = LocalDate.now();
         job.setIsActive(job.getClosingDate() == null || !job.getClosingDate().isBefore(today));
-        
+
         return mapper.map(job, JobDetailsDto.class);
-    }
+    }  
+    @Override
+    public AddJobApplicationResponseDto applyForJob(
+            AddJobApplicationRequestDto requestDto,
+            MultipartFile resume) {
 
-	@Override
-	public AddJobApplicationResponseDto applyForJob(AddJobApplicationRequestDto requestDto, MultipartFile resume) {
-		
-		 if (requestDto == null){ throw new CustomeException("Request data is missing");}
-	     if (resume == null || resume.isEmpty()) { throw new CustomeException("Resume file is required");}
-	        
-		 Job job = jobRepository.findById(requestDto.getJobId()).orElseThrow(() -> new CustomeException("Job not found with ID: " + requestDto.getJobId()));
-             // Check if user already applied (same email or same domain)
-	     boolean exists = jobApplicationRepository.findAll().stream()
-	                                              .anyMatch(app -> app.getEmail().equalsIgnoreCase(requestDto.getEmail()));
-        if (exists){ throw new CustomeException("You already applied for a job with this email!"); }
-	        
-	        JobApplication application = new JobApplication();
-	        application.setEmail(requestDto.getEmail());
-	        application.setFullName(requestDto.getFullName());
-	        application.setPhoneNumber(requestDto.getPhoneNumber());
-	        application.setApplicationDate(LocalDate.now());
-	        application.setJob(job);	
-	        application.setStatus("SUBMITTED");
-	               
-            try {       	
-            	// ensure directory exists
-                Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-                Files.createDirectories(uploadPath);
+        if (requestDto == null) {
+            throw new CustomeException("Request data is missing");
+        }
 
-                String originalFilename = StringUtils.cleanPath(resume.getOriginalFilename());
-                // optionally add unique suffix
-                String fileName = System.currentTimeMillis() + "_" + originalFilename;
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(resume.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        if (resume == null || resume.isEmpty()) {
+            throw new CustomeException("Resume file is required");
+        }
 
-                application.setResumeFilePath("/uploads/resumes/" + fileName);
+        Job job = jobRepository.findById(requestDto.getJobId())
+                .orElseThrow(() ->
+                        new CustomeException("Job not found with ID: " + requestDto.getJobId()));
 
-            }catch (IOException ex) {
-                throw new CustomeException("Could not store file. Error: " + ex.getMessage());
-            }
-	        
-            JobApplication saveApplication = jobApplicationRepository.save(application);
-            
-            emailService.sendConfirmationEmail(
-                    saveApplication.getEmail(),
-                    saveApplication.getFullName(),
-                    job.getJobTitle()
+        boolean exists = jobApplicationRepository.findAll().stream()
+                .anyMatch(app ->
+                        app.getEmail().equalsIgnoreCase(requestDto.getEmail()));
+
+        if (exists) {
+            throw new CustomeException("You already applied for a job with this email!");
+        }
+
+        JobApplication application = new JobApplication();
+        application.setEmail(requestDto.getEmail());
+        application.setFullName(requestDto.getFullName());
+        application.setPhoneNumber(requestDto.getPhoneNumber());
+        application.setApplicationDate(LocalDate.now());
+        application.setJob(job);
+        application.setStatus("SUBMITTED");
+
+        // ===============================
+        // ✅ CLOUDINARY UPLOAD (NEW)
+        // ===============================
+        String resumeUrl;
+        try {
+            resumeUrl = cloudinaryService.uploadFile(
+                    resume,
+                    resumeFolder,
+                    "raw"   // resumes are PDFs/docs
             );
+        } catch (Exception e) {
+            throw new CustomeException("Resume upload failed: " + e.getMessage());
+        }
+
+        // ✅ Store Cloudinary URL
+        application.setResumeFilePath(resumeUrl);
+
+        JobApplication savedApplication =
+                jobApplicationRepository.save(application);
+
+        emailService.sendConfirmationEmail(
+                savedApplication.getEmail(),
+                savedApplication.getFullName(),
+                job.getJobTitle()
+        );
+
+        AddJobApplicationResponseDto response =
+                new AddJobApplicationResponseDto();
+
+        response.setId(savedApplication.getId());
+        response.setApplicationDate(savedApplication.getApplicationDate());
+        response.setStatus(savedApplication.getStatus());
+
+        return response;
+    }
+    @Override
+    public List<JobApplicationDto> getApplicationsByJobId(Long jobId) {
+
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() ->
+                        new CustomeException("Job not found with ID: " + jobId));
+
+        List<JobApplication> apps = job.getApplications();
+
+        return apps.stream().map(app -> {
+            JobApplicationDto dto = new JobApplicationDto();
+            dto.setId(app.getId());
+            dto.setFullName(app.getFullName());
+            dto.setEmail(app.getEmail());
+            dto.setPhoneNumber(app.getPhoneNumber());
+            dto.setApplicationDate(app.getApplicationDate());
+            dto.setStatus(app.getStatus());
+
             
-            AddJobApplicationResponseDto applicationRes = new AddJobApplicationResponseDto();
-            
-            applicationRes.setId(saveApplication.getId());
-            applicationRes.setApplicationDate(saveApplication.getApplicationDate());
-            applicationRes.setStatus(saveApplication.getStatus());
+            dto.setResumeUrl(app.getResumeFilePath());
 
-		return applicationRes;
-	}  
-	
-	@Override
-	public List<JobApplicationDto> getApplicationsByJobId(Long jobId){
-
-	    Job job = jobRepository.findById(jobId).orElseThrow(() -> new CustomeException("Job not found with ID: " + jobId));
-
-	    List<JobApplication> apps = job.getApplications();
-	    
-	    List<JobApplicationDto> applicationsResponse = apps.stream().map(app->{
-	    	JobApplicationDto dto = new JobApplicationDto();
-	        dto.setId(app.getId());
-	        dto.setFullName(app.getFullName());
-	        dto.setEmail(app.getEmail());
-	        dto.setPhoneNumber(app.getPhoneNumber());
-	        dto.setApplicationDate(app.getApplicationDate());
-	        dto.setStatus(app.getStatus());
-	        dto.setResumeUrl(app.getResumeFilePath());
-	        
-	        return dto;
-	    }).collect(Collectors.toList());
-	    
-	    return applicationsResponse;
-	}
+            return dto;
+        }).collect(Collectors.toList());
+    }
 }

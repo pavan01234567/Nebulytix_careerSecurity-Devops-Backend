@@ -29,7 +29,7 @@ public interface HrService {
     public String deleteById(Long id);
     public EmployeeDetailsResponseDto addAttendence(Long id, int days);
       // Payslip
-    public byte[] downloadPayslip(Long payslipId) throws Exception;
+    public String getPayslipUrl(Long payslipId) throws Exception;
     public List<PayslipDto> listPayslipsForEmployee(Long employeeId);
        // Job management
     public JobDetailsDto addJob(AddJobRequestDto jobRequestDto);
@@ -66,6 +66,7 @@ public interface HrService {
 	public List<EmployeeRegulationDTO> regulation(ApprovalStatus status) ;
 	
 	public List<EmployeeProfileDto> getEmployeeList();
+
 
 	
 
