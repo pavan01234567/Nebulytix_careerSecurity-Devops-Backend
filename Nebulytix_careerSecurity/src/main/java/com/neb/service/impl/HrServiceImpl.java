@@ -115,7 +115,7 @@ public class HrServiceImpl implements HrService {
     private ProjectRepository projectRepo;
 
     @Autowired
-    private MisPunchRequestRepo MisPunchRequestRepo;
+    private MisPunchRequestRepo misPunchRequestRepo;
 
    
     @Autowired
@@ -253,12 +253,10 @@ public class HrServiceImpl implements HrService {
     }
     @Override
     public String generateDailyReport(LocalDate reportDate) {
-
-        List<DailyReport> reports =
-                dailyReportRepository.findReportsWithEmployee(reportDate);
+        List<DailyReport> reports = dailyReportRepository.findReportsWithEmployee(reportDate);
 
         if (reports.isEmpty()) {
-            return "No daily reports found";
+            return null; // Changed to null to trigger your Controller's 404 logic
         }
 
         try {
@@ -267,12 +265,13 @@ public class HrServiceImpl implements HrService {
 
             String fileName = "daily-report-" + reportDate;
 
-            // ✅ UPLOAD TO CLOUDINARY
+            // ✅ FIX: Change "raw" to "image" 
+            // This enables HTTPS browser preview and removes the insecure connection warning
             String reportUrl = cloudinaryService.uploadFile(
                     pdfBytes,
                     fileName,
                     reportsFolder,
-                    "raw"
+                    "image" 
             );
 
             reports.forEach(r -> r.setDailyReportUrl(reportUrl));
@@ -281,7 +280,7 @@ public class HrServiceImpl implements HrService {
             return reportUrl;
 
         } catch (Exception e) {
-            throw new CustomeException("Daily report upload failed");
+            throw new CustomeException("Daily report upload failed: " + e.getMessage());
         }
     }
 
@@ -762,58 +761,7 @@ public class HrServiceImpl implements HrService {
 
 			    return dto;
 			}
-//		 @Override
-//		 public TodayAttendanceCountDTO todayAttendanceCount() {
-//
-//		     List<Employee> employees = empRepo.findAll();
-//
-//		     long presentCount = 0;
-//		     long wfhCount = 0;
-//
-//		     LocalDate today = LocalDate.now();
-//
-//		     for (Employee emp : employees) {
-//
-//		         EmployeeLogInDetails session =
-//		                 empLoginRepo.findTopByEmployeeAndLogoutTimeIsNullOrderByLoginTimeDesc(emp);
-//
-//		        
-//		         if (session == null || session.getLoginTime() == null) {
-//		             continue;
-//		         }
-//
-//		        
-//		         LocalDate loginDate = session.getLoginTime()
-//		                                      .atZone(ZoneId.systemDefault())
-//		                                      .toLocalDate();
-//		         if (!loginDate.equals(today)) {
-//		             continue;
-//		         }
-//
-//	
-//		         System.out.println(
-//		                 "EMP=" + emp.getId() +
-//		                 " LOGIN=" + session.getLoginTime() +
-//		                 " STATUS=" + session.getDayStatus()
-//		         );
-//
-//		         String status = session.getDayStatus();
-//
-//		         if (status == null) {
-//		             continue;
-//		         }
-//
-//		         
-//		         if (status.contains(EmployeeDayStatus.PRESENT.name())) {
-//		             presentCount++;
-//		         }
-//		         else if (status.contains(EmployeeDayStatus.WFH.name())) {
-//		             wfhCount++;
-//		         }
-//		     }
-//
-//		     return new TodayAttendanceCountDTO(presentCount, wfhCount);
-//		 }
+
 		 @Override
 		    public TodayAttendanceCountDTO todayAttendanceCount() {
 		        List<Employee> employees = empRepo.findAll();
@@ -843,7 +791,7 @@ public class HrServiceImpl implements HrService {
 			    Employee employee = empRepo.findById(EmployeeId)
 			            .orElseThrow(() -> new EmployeeNotFoundException("Invalid Id"));
 
-			    MisPunchRequest empRegDetails = MisPunchRequestRepo
+			    MisPunchRequest empRegDetails = misPunchRequestRepo
 			            .findByEmployeeAndPunchDate(employee, misPunchDate)
 			            .orElseThrow(() -> new RuntimeException("No MisPunch record found"));
 
@@ -879,7 +827,7 @@ public class HrServiceImpl implements HrService {
 			        empLoginRepo.save(empLoginDetails);
 			    }
 
-			    MisPunchRequestRepo.save(empRegDetails);
+			    misPunchRequestRepo.save(empRegDetails);
 
 			    return employee.getId() + " regulated successfully";
 			}
@@ -890,7 +838,7 @@ public class HrServiceImpl implements HrService {
 			    ApprovalStatus effectiveStatus =
 			            (status == null) ? ApprovalStatus.PENDING : status;
 
-			    return MisPunchRequestRepo.findAllByStatus(effectiveStatus)
+			    return misPunchRequestRepo.findAllByStatus(effectiveStatus)
 			            .stream()
 			            .map(EmployeeRegulationDTO::new)
 			            .toList();
