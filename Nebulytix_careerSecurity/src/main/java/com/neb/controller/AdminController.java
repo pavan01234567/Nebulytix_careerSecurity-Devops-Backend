@@ -3,10 +3,9 @@ package com.neb.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,12 +23,10 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.neb.dto.EmployeeDTO;
 import com.neb.dto.EmployeeDetailsResponseDto;
 import com.neb.dto.GeneratePayslipRequest;
 import com.neb.dto.PayslipDto;
 import com.neb.dto.ProjectResponseDto;
-import com.neb.dto.ResponseDTO;
 import com.neb.dto.ResponseMessage;
 import com.neb.dto.UpdateProjectRequestDto;
 import com.neb.dto.WorkResponseDto;
@@ -148,19 +145,21 @@ public class AdminController {
 			return ResponseEntity.ok(new ResponseMessage<EmployeeDetailsResponseDto>(HttpStatus.OK.value(), HttpStatus.OK.name(), " Employee fetched successfully", employee));
 		}
 		
-		@GetMapping("/payslip/{id}/download")
-	    public ResponseEntity<byte[]> download(@PathVariable Long id) throws Exception {
-	        byte[] pdf = hrService.downloadPayslip(id);
+	    @GetMapping("/payslip/{id}/download")
+	    public ResponseEntity<ResponseMessage<String>> downloadPayslip(@PathVariable Long id) throws Exception {
 
-	        HttpHeaders headers = new HttpHeaders();
-	        headers.setContentType(MediaType.APPLICATION_PDF);
-	        headers.setContentDisposition(ContentDisposition
-	            .attachment()
-	            .filename("payslip_" + id + ".pdf")
-	            .build());
+	        String pdfUrl = hrService.getPayslipUrl(id);
 
-	        return ResponseEntity.ok().headers(headers).body(pdf);
+	        if (pdfUrl == null) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body(new ResponseMessage<>(404, "NOT_FOUND", "Payslip not found", null));
+	        }
+
+	        return ResponseEntity.ok(
+	                new ResponseMessage<>(200, "OK", "Payslip URL fetched", pdfUrl)
+	        );
 	    }
+
 
 	    @GetMapping("/payslip/{employeeId}")
 	    public ResponseEntity<List<PayslipDto>> listPayslips(@PathVariable Long employeeId) {
@@ -180,21 +179,23 @@ public class AdminController {
 	    	EmployeeDetailsResponseDto updatedEmp = hrService.addAttendence(empId, days);
 	    	return ResponseEntity.ok(new ResponseMessage<EmployeeDetailsResponseDto>(HttpStatus.OK.value(), HttpStatus.OK.name(), "employee details updated", updatedEmp));
 	    }
-	    
 	    @GetMapping("/reports/daily")
-	    public ResponseEntity<byte[]> generateReport() throws Exception {
-	    		    	
-	    	LocalDate date = LocalDate.of(2025, 11, 05);
-	        byte[] pdfBytes = adminService.generateDailyReport(date);
-	        HttpHeaders headers = new HttpHeaders();
-	        headers.setContentType(MediaType.APPLICATION_PDF);
-	        headers.setContentDisposition(ContentDisposition
-	            .attachment()
-	            .filename("DailyReport_" + date + ".pdf")
-	            .build());
-	        System.out.println("pdf generated");
-	        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+	    public ResponseEntity<ResponseMessage<String>> generateReport() throws Exception {
+
+	        LocalDate date = LocalDate.of(2025, 11, 5);
+
+	        String reportUrl = adminService.generateDailyReport(date);
+
+	        return ResponseEntity.ok(
+	                new ResponseMessage<>(
+	                        HttpStatus.OK.value(),
+	                        HttpStatus.OK.name(),
+	                        "Daily report generated successfully",
+	                        reportUrl
+	                )
+	        );
 	    }
+
 
 	   @PutMapping("/update/hr/{id}")
 	   public ResponseEntity<ResponseMessage<EmployeeDetailsResponseDto>> updateHrDetails(@PathVariable Long id,@RequestBody UpdateEmployeeRequestDto updateReq) {
@@ -319,5 +320,18 @@ public class AdminController {
             ClientProfileDto updateClient = adminService.updateClient(clientId, req);
             return ResponseEntity.ok(new ResponseMessage<>(200, "OK", "Client updated successfully",updateClient));
 	    }
-	   
+	
+
+	    @PutMapping("/{id}/profile-picture")
+	    public ResponseEntity<ResponseMessage<String>> uploadProfilePicture(
+	            @PathVariable Long id,
+	            @RequestPart("file") MultipartFile file
+	    ) {
+	        String uploadedUrl = adminService.saveProfilePictureUrl(id, file);
+	        return ResponseEntity.ok(
+	            new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Profile picture updated successfully", uploadedUrl)
+	        );
+	    }
+
+
 }

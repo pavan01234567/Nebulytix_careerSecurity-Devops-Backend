@@ -2,8 +2,8 @@ package com.neb.controller;
 //original
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,21 +20,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-
 import com.neb.dto.AddDailyReportRequestDto;
 import com.neb.dto.EmployeeBankDetailsResponse;
 import com.neb.dto.EmployeeDTO;
 import com.neb.dto.EmployeeLeaveDTO;
 import com.neb.dto.EmployeeRegulationDTO;
-import com.neb.dto.GeneratePayslipRequest;
-import com.neb.dto.PayslipDto;
 import com.neb.dto.ResponseDTO;
 import com.neb.dto.ResponseMessage;
 import com.neb.dto.WorkResponseDto;
 import com.neb.dto.employee.EmployeeProfileDto;
 import com.neb.dto.project.ProjectsResponseDto;
 import com.neb.entity.Employee;
-import com.neb.entity.Payslip;
 import com.neb.entity.Work;
 import com.neb.service.EmployeeBankDetailsService;
 import com.neb.service.EmployeeService;
@@ -57,15 +53,14 @@ public class EmployeeController {
        EmployeeProfileDto dto = employeeService.getMyProfile();
        return ResponseEntity.ok(new ResponseMessage<>(200, "SUCCESS", "Profile fetched successfully", dto));
     }
-	
-	@PostMapping("/payslip/generate")
-    public ResponseEntity<PayslipDto> generate(@RequestBody GeneratePayslipRequest request) throws Exception {
-        System.out.println(request);
-		Payslip p = employeeService.generatePayslip(request.getEmployeeId(), request.getMonthYear());
-        PayslipDto dto = PayslipDto.fromEntity(p);
-        return ResponseEntity.ok(dto);
-    }
-	
+	// ================= PAYSLIP (CLOUDINARY) =================
+	@GetMapping("/payslip/{payslipId}/url")
+	public ResponseEntity<ResponseMessage<String>> getPayslipUrl(@PathVariable Long payslipId) {
+	    String url = employeeService.getPayslipUrl(payslipId);
+	    return ResponseEntity.ok(
+	        new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Payslip URL fetched successfully", url)
+	    );
+	}
 	 // Get employee details
     @GetMapping("/get/{id}")
     public ResponseMessage<Employee> getEmployee(@PathVariable Long id) {
@@ -89,10 +84,18 @@ public class EmployeeController {
             @RequestParam("reportDetails") String reportDetails,
             @RequestParam(value = "reportAttachment", required = false) MultipartFile reportAttachment
     ) {
-        WorkResponseDto updatedTask = employeeService.submitReport(taskId, status, reportDetails, reportAttachment, LocalDate.now());
-        ResponseMessage<WorkResponseDto> response = new ResponseMessage<>(HttpStatus.OK.value(),HttpStatus.OK.name(),"Report submitted successfully",updatedTask);
+        WorkResponseDto updatedTask = employeeService.submitReport(
+            taskId, status, reportDetails, reportAttachment, LocalDate.now()
+        );
+        ResponseMessage<WorkResponseDto> response = new ResponseMessage<>(
+            HttpStatus.OK.value(),
+            HttpStatus.OK.name(),
+            "Report submitted successfully",
+            updatedTask
+        );
         return ResponseEntity.ok(response);
     }
+
     
     @PostMapping("/dailyReport/submit")
    public ResponseEntity<ResponseMessage<String>> submitDailyReport(@RequestBody AddDailyReportRequestDto reportDetails){
@@ -101,10 +104,21 @@ public class EmployeeController {
    }
     
     @PutMapping("/{id}/profile-picture")
-    public ResponseEntity<ResponseMessage<String>> uploadProfilePicture(@PathVariable Long id,@RequestParam("profileImage") MultipartFile profileImage) {
-        String imageUrl = employeeService.uploadProfilePicture(id, profileImage);
-        return ResponseEntity.ok(new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(),"Profile picture uploaded successfully", imageUrl));
+    public ResponseEntity<ResponseMessage<String>> uploadProfilePicture(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload 
+    ) {
+        // 1. Get the URL from the JSON key sent by React
+        String imageUrl = payload.get("profilePictureUrl");
+        
+        // 2. Call the updated service method that handles Strings, not files
+        String updatedUrl = employeeService.saveProfilePictureUrl(id, imageUrl); 
+        
+        return ResponseEntity.ok(
+            new ResponseMessage<>(HttpStatus.OK.value(), HttpStatus.OK.name(), "Profile picture updated successfully", updatedUrl)
+        );
     }
+
     
     @DeleteMapping("/{id}/profile-picture")
     public ResponseEntity<ResponseMessage<String>> deleteProfilePicture(@PathVariable Long id) {

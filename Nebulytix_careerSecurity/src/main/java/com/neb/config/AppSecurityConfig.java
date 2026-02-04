@@ -63,7 +63,16 @@ public class AppSecurityConfig {
 	            .requestMatchers("/api/auth/login","/api/admin/create-admin").permitAll()
 	            .requestMatchers("/api/auth/refresh-token").permitAll()
 	            .requestMatchers("/api/auth/register").permitAll()
-	            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+	            .requestMatchers(
+	                    "/swagger-ui.html",
+	                    "/swagger-ui/**",
+	                    "/v3/api-docs/**",
+	                    "/v3/api-docs",
+	                    "/swagger-resources/**",
+	                    "/webjars/**"
+	            ).permitAll()
+
+
 	            .requestMatchers("/api/admin/**").hasRole("ADMIN")
 	            .requestMatchers("/api/hr/**").hasAnyRole("HR", "ADMIN")
 	            .requestMatchers("/api/employee/**").hasAnyRole("EMPLOYEE")

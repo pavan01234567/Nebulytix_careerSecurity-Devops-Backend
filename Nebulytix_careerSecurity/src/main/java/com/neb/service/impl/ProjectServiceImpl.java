@@ -1,6 +1,5 @@
 package com.neb.service.impl;
 
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -10,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.neb.dto.EmployeeResponseDto;
 import com.neb.dto.ProjectResponseDto;
 import com.neb.dto.ResponseMessage;
 import com.neb.dto.UpdateProjectRequestDto;
@@ -21,19 +19,15 @@ import com.neb.dto.project.ProjectsResponseDto;
 import com.neb.entity.Client;
 import com.neb.entity.Employee;
 import com.neb.entity.Project;
-import com.neb.entity.ProjectDocument;
 import com.neb.exception.CustomeException;
 import com.neb.exception.EmployeeNotFoundException;
-import com.neb.exception.FileStorageException;
 import com.neb.exception.ResourceNotFoundException;
 import com.neb.repo.ClientRepository;
 import com.neb.repo.EmployeeRepository;
-import com.neb.repo.ProjectDocumentRepository;
 import com.neb.repo.ProjectRepository;
 import com.neb.service.ClientService;
+import com.neb.service.CloudinaryService;
 import com.neb.service.ProjectService;
-//import com.neb.dto.project.ProjectsResponseDto;
-import com.neb.util.FileUtil;
 import com.neb.util.ProjectStatus;
 
 import jakarta.transaction.Transactional;
@@ -48,139 +42,79 @@ public class ProjectServiceImpl implements ProjectService {
     private ProjectRepository projectRepository;
 
     @Autowired
-    private ProjectDocumentRepository docRepo;
-    
-    @Autowired 
     private EmployeeRepository empRepo;
-    
+
     @Autowired
-    private ClientService clientService; 
-    
+    private ClientService clientService;
+
+    @Autowired
+    private CloudinaryService cloudinaryService; 
+
     @Autowired
     private ModelMapper mapper;
-//    @Value("${project.file.upload-dir}")
-//    private String uploadDir;
-    @Value("${project.file.upload-dir}")
-    private String uploadDir;
-    
 
+    @Value("${cloudinary.folder.projects}")
+    private String projectFolder; // 🔹 ADDED
+
+    // =====================================================
+    // GET ALL PROJECTS
+    // =====================================================
     @Override
     public ResponseMessage<List<ProjectsResponseDto>> getAllProjects() {
-    	List<Project> projects = projectRepository.findAll();
 
-        List<ProjectsResponseDto> dtoList = projects.stream()
-                .map(project -> {
+        List<Project> projects = projectRepository.findAll();
 
-                    ProjectsResponseDto dto = new ProjectsResponseDto();
+        List<ProjectsResponseDto> dtoList = projects.stream().map(project -> {
 
-                    //  Project fields
-                    dto.setId(project.getId());
-                    dto.setProjectName(project.getProjectName());
-                    dto.setProjectCode(project.getProjectCode());
-                    dto.setProjectType(project.getProjectType());
-                    dto.setDescription(project.getDescription());
-                    dto.setStartDate(project.getStartDate());
-                    dto.setExpectedEndDate(project.getExpectedEndDate());
-                    dto.setPriority(project.getPriority());
-                    dto.setBudget(project.getBudget());
-                    dto.setRiskLevel(project.getRiskLevel());
-                    dto.setStatus(project.getStatus());
-                    dto.setProgress(project.getProgress());
-                    dto.setQuotationPdfUrl(project.getQuotationPdfUrl());
-                    dto.setContractPdfUrl(project.getContractPdfUrl());
-                    dto.setRequirementDocUrl(project.getRequirementDocUrl());
+            ProjectsResponseDto dto = mapper.map(project, ProjectsResponseDto.class);
 
-                    //  CLIENT MAPPING
-                    if (project.getClient() != null) {
-                        Client client = project.getClient();
+            if (project.getClient() != null) {
+                Client client = project.getClient();
+                ClientProfileDto clientDto = mapper.map(client, ClientProfileDto.class);
+                clientDto.setUserEnabled(
+                        client.getUser() != null && client.getUser().isEnabled()
+                );
+                dto.setClient(clientDto);
+            }
 
-                        ClientProfileDto clientDto = new ClientProfileDto();
-                        clientDto.setId(client.getId());
-                        clientDto.setCompanyName(client.getCompanyName());
-                        clientDto.setContactPerson(client.getContactPerson());
-                        clientDto.setContactEmail(client.getContactEmail());
-                        clientDto.setPhone(client.getPhone());
-                        clientDto.setAlternatePhone(client.getAlternatePhone());
-                        clientDto.setAddress(client.getAddress());
-                        clientDto.setWebsite(client.getWebsite());
-                        clientDto.setIndustryType(client.getIndustryType());
-                        clientDto.setGstNumber(client.getGstNumber());
-                        clientDto.setEmpStatus(client.getStatus());
-                        clientDto.setUserEnabled(
-                                client.getUser() != null && client.getUser().isEnabled()
-                        );
+            if (project.getEmployees() != null && !project.getEmployees().isEmpty()) {
+                List<EmployeeProfileDto> employeeDtos =
+                        clientService.getEmployeesByProject(project.getId());
+                dto.setEmployees(employeeDtos);
+            }
 
-                        dto.setClient(clientDto);
-                    }
+            return dto;
+        }).toList();
 
-                    
-                    if (project.getEmployees() != null && !project.getEmployees().isEmpty()) {
-                        List<EmployeeProfileDto> employeeDtos =
-                                clientService.getEmployeesByProject(project.getId());
-                        dto.setEmployees(employeeDtos);
-                    }
-
-                    return dto;
-                })
-                .toList();
         return new ResponseMessage<>(200, "SUCCESS", "All projects", dtoList);
     }
 
+   
     @Override
     public ResponseMessage<ProjectsResponseDto> getProjectById(Long id) {
-    	 Project project = projectRepository.findProjectWithClientAndEmployees(id)
-    	            .orElseThrow(() -> new CustomeException("Project not found"));
 
-    	    ProjectsResponseDto dto = new ProjectsResponseDto();
+        Project project = projectRepository.findProjectWithClientAndEmployees(id)
+                .orElseThrow(() -> new CustomeException("Project not found"));
 
-    	    //  Project fields
-    	    dto.setId(project.getId());
-    	    dto.setProjectName(project.getProjectName());
-    	    dto.setProjectCode(project.getProjectCode());
-    	    dto.setProjectType(project.getProjectType());
-    	    dto.setDescription(project.getDescription());
-    	    dto.setStartDate(project.getStartDate());
-    	    dto.setExpectedEndDate(project.getExpectedEndDate());
-    	    dto.setPriority(project.getPriority());
-    	    dto.setBudget(project.getBudget());
-    	    dto.setRiskLevel(project.getRiskLevel());
-    	    dto.setStatus(project.getStatus());
-    	    dto.setProgress(project.getProgress());
-    	    dto.setQuotationPdfUrl(project.getQuotationPdfUrl());
-    	    dto.setContractPdfUrl(project.getContractPdfUrl());
-    	    dto.setRequirementDocUrl(project.getRequirementDocUrl());
+        ProjectsResponseDto dto = mapper.map(project, ProjectsResponseDto.class);
 
-    	    //  CLIENT MAPPING (NO fromEntity)
-    	    if (project.getClient() != null) {
-    	        Client client = project.getClient();
+        if (project.getClient() != null) {
+            ClientProfileDto clientDto = mapper.map(project.getClient(), ClientProfileDto.class);
+            clientDto.setUserEnabled(project.getClient().getUser().isEnabled());
+            dto.setClient(clientDto);
+        }
 
-    	        ClientProfileDto clientDto = new ClientProfileDto();
-    	        clientDto.setId(client.getId());
-    	        clientDto.setCompanyName(client.getCompanyName());
-    	        clientDto.setContactPerson(client.getContactPerson());
-    	        clientDto.setContactEmail(client.getContactEmail());
-    	        clientDto.setPhone(client.getPhone());
-    	        clientDto.setAlternatePhone(client.getAlternatePhone());
-    	        clientDto.setAddress(client.getAddress());
-    	        clientDto.setWebsite(client.getWebsite());
-    	        clientDto.setIndustryType(client.getIndustryType());
-    	        clientDto.setGstNumber(client.getGstNumber());
-    	        clientDto.setEmpStatus(client.getStatus());
-    	        clientDto.setUserEnabled(client.getUser().isEnabled());
+        if (project.getEmployees() != null && !project.getEmployees().isEmpty()) {
+            dto.setEmployees(clientService.getEmployeesByProject(id));
+        }
 
-    	        dto.setClient(clientDto);
-    	    }
-
-    	    //  EMPLOYEE LIST MAPPING (NO fromEntity)
-    	    if (project.getEmployees() != null && !project.getEmployees().isEmpty()) {
-    	        List<EmployeeProfileDto> employeeDtos = clientService.getEmployeesByProject(id);
-    	        dto.setEmployees(employeeDtos);
-    	    }
         return new ResponseMessage<>(200, "SUCCESS", "Project details", dto);
     }
 
+    
     @Override
     public ResponseMessage<ProjectResponseDto> updateProject(Long id, UpdateProjectRequestDto dto) {
+
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new CustomeException("Project not found"));
 
@@ -192,8 +126,11 @@ public class ProjectServiceImpl implements ProjectService {
         if (dto.getStatus() != null) project.setStatus(dto.getStatus());
 
         projectRepository.save(project);
-        return new ResponseMessage<>(200, "SUCCESS", "Project updated", map(project));
+
+        return new ResponseMessage<>(200, "SUCCESS", "Project updated",
+                ProjectResponseDto.fromEntity(project));
     }
+
 
     @Override
     public ResponseMessage<String> deleteProject(Long id) {
@@ -201,35 +138,7 @@ public class ProjectServiceImpl implements ProjectService {
         return new ResponseMessage<>(200, "SUCCESS", "Project deleted", null);
     }
 
-    private ProjectResponseDto map(Project p) {
-        ProjectResponseDto dto = new ProjectResponseDto();
-        dto.setId(p.getId());
-        dto.setProjectName(p.getProjectName());
-        dto.setProjectCode(p.getProjectCode());
-        dto.setProjectType(p.getProjectType());
-        dto.setDescription(p.getDescription());
-        dto.setStartDate(p.getStartDate());
-        dto.setExpectedEndDate(p.getExpectedEndDate());
-        dto.setPriority(p.getPriority());
-        dto.setBudget(p.getBudget());
-        dto.setRiskLevel(p.getRiskLevel());
-        dto.setStatus(p.getStatus());
-        dto.setProgress(p.getProgress());
-        dto.setClientId(p.getClient().getId());
-        return dto;
-    }
-
-//    @Override
-//    @Transactional
-//  public  ProjectResponseDto updateProjectStatus(Long projectId, ProjectStatus status) {
-//        Project project = projectRepository.findById(projectId)
-//                .orElseThrow(() -> new CustomeException("Project not found with id: " + projectId));
-//
-//        project.setStatus(ProjectStatus.PLANNED);
-//        Project save = projectRepository.save(project);
-//
-//        return ProjectResponseDto.fromEntity(project);
-//    }
+  
     @Override
     @Transactional
     public ProjectResponseDto updateProjectStatus(Long projectId, ProjectStatus status) {
@@ -238,25 +147,28 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new CustomeException(
                         "Project not found with id: " + projectId));
 
-        
         project.setStatus(status);
-
         projectRepository.save(project);
 
         return ProjectResponseDto.fromEntity(project);
     }
 
-
+    
     @Override
     public List<ProjectResponseDto> getProjectsByClient(Long clientId) {
+
         List<Project> projects = projectRepository.findByClientId(clientId);
 
-        if (projects.isEmpty()) { throw new CustomeException("No projects found for client with ID: " + clientId);}
+        if (projects.isEmpty()) {
+            throw new CustomeException("No projects found for client with ID: " + clientId);
+        }
 
-        return projects.stream().map(ProjectResponseDto::fromEntity).toList();
+        return projects.stream()
+                .map(ProjectResponseDto::fromEntity)
+                .toList();
     }
 
-
+   
     @Override
     @Transactional
     public Project addProject(
@@ -266,115 +178,108 @@ public class ProjectServiceImpl implements ProjectService {
             MultipartFile contract) {
 
         Client client = clientRepository.findById(dto.getClientId())
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found with id " + dto.getClientId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Client not found with id " + dto.getClientId()));
 
+        // ✅ CREATE NEW ENTITY MANUALLY
         Project project = new Project();
-        project.setClient(client);
+
+        // ✅ SET FIELDS EXPLICITLY (NO ID)
         project.setProjectName(dto.getProjectName());
         project.setProjectCode(dto.getProjectCode());
         project.setProjectType(dto.getProjectType());
         project.setDescription(dto.getDescription());
-        project.setStartDate(dto.getStartDate());
-        project.setExpectedEndDate(dto.getExpectedEndDate());
         project.setPriority(dto.getPriority());
         project.setBudget(dto.getBudget());
         project.setRiskLevel(dto.getRiskLevel());
+        project.setTags(dto.getTags());
+
+        project.setClient(client);
         project.setStatus(ProjectStatus.PLANNED);
         project.setProgress(0);
         project.setCreatedDate(LocalDate.now());
 
-        // Save project first (so we have an ID to link documents)
-        Project savedProject = projectRepository.save(project);
-
-        //  Handle file uploads and create ProjectDocument entities
+     
         if (quotation != null && !quotation.isEmpty()) {
-            String path = FileUtil.upload(quotation, uploadDir);
-            ProjectDocument doc = new ProjectDocument();
-            doc.setFileName(quotation.getOriginalFilename());
-            doc.setFileUrl(path);
-            doc.setUploadedDate(LocalDate.now());
-            doc.setProject(savedProject);
-            docRepo.save(doc);
+            String url = cloudinaryService.uploadFile(
+                    quotation, projectFolder + "/quotation", "auto");
+            project.setQuotationPdfUrl(url);
         }
 
         if (requirement != null && !requirement.isEmpty()) {
-            String path = FileUtil.upload(requirement, uploadDir);
-            ProjectDocument doc = new ProjectDocument();
-            doc.setFileName(requirement.getOriginalFilename());
-            doc.setFileUrl(path);
-            doc.setUploadedDate(LocalDate.now());
-            doc.setProject(savedProject);
-            docRepo.save(doc);
+            String url = cloudinaryService.uploadFile(
+                    requirement, projectFolder + "/requirement", "auto");
+            project.setRequirementDocUrl(url);
         }
 
         if (contract != null && !contract.isEmpty()) {
-            String path = FileUtil.upload(contract, uploadDir);
-            ProjectDocument doc = new ProjectDocument();
-            doc.setFileName(contract.getOriginalFilename());
-            doc.setFileUrl(path);
-            doc.setUploadedDate(LocalDate.now());
-            doc.setProject(savedProject);
-            docRepo.save(doc);
+            String url = cloudinaryService.uploadFile(
+                    contract, projectFolder + "/contract", "auto");
+            project.setContractPdfUrl(url);
         }
 
-        return savedProject;
+        // 
+        return projectRepository.save(project);
     }
 
 
+    // =====================================================
+    // ADD EMPLOYEE TO PROJECT
+    // =====================================================
+    @Override
+    public ProjectResponseDto addEmployeeToProject(Long projectId, Long employeeId) {
 
-	@Override
-	public ProjectResponseDto addEmployeeToProject(Long projectId, Long employeeId) {
-		    Project project = projectRepository.findById(projectId)
-	                .orElseThrow(() -> new CustomeException("Project not found"));
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomeException("Project not found"));
 
-	        Employee employee = empRepo.findById(employeeId)
-	                .orElseThrow(() -> new EmployeeNotFoundException("Employee not found"));
-	        System.out.println(employee);
-	        if (project.getEmployees().contains(employee)) {
-	            throw new CustomeException("Employee already assigned to this project");
-	        }
+        Employee employee = empRepo.findById(employeeId)
+                .orElseThrow(() -> new EmployeeNotFoundException("Employee not found"));
 
-	        // maintain BOTH sides
-	        project.getEmployees().add(employee);
-	        employee.getAssignedProjects().add(project);
-	        employee.setProject(project);
+        if (project.getEmployees().contains(employee)) {
+            throw new CustomeException("Employee already assigned to this project");
+        }
 
-	        Project savedProject = projectRepository.save(project); // owning side
-       return mapper.map(savedProject, ProjectResponseDto.class);
-       
-	}
+        project.getEmployees().add(employee);
+        employee.getAssignedProjects().add(project);
+        employee.setProject(project);
 
-	@Override
-	public void removeEmployeeFromProject(Long projectId, Long employeeId) {
-		 Project project = projectRepository.findById(projectId)
-	                .orElseThrow(() -> new RuntimeException("Project not found"));
+        return mapper.map(projectRepository.save(project), ProjectResponseDto.class);
+    }
 
-	        Employee employee = empRepo.findById(employeeId)
-	                .orElseThrow(() -> new RuntimeException("Employee not found"));
+    
+    @Override
+    public void removeEmployeeFromProject(Long projectId, Long employeeId) {
 
-	        // Check assignment
-	        if (!project.getEmployees().contains(employee)) {
-	            throw new RuntimeException("Employee is not assigned to this project");
-	        }
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
 
-	        // Remove from both sides (VERY IMPORTANT)
-	        project.getEmployees().remove(employee);
-	        employee.getAssignedProjects().remove(project);
-	        employee.setProject(null);
+        Employee employee = empRepo.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-	        // Save owning side
-	        projectRepository.save(project);
-	}
+        if (!project.getEmployees().contains(employee)) {
+            throw new RuntimeException("Employee is not assigned to this project");
+        }
 
-	@Override
-	public ProjectsResponseDto getActiveProjectsByEmployee(Long employeeId) {
-		 Project project = empRepo.findProjectByEmployeeId(employeeId);
-		 return mapper.map(project, ProjectsResponseDto.class);
-	}
+        project.getEmployees().remove(employee);
+        employee.getAssignedProjects().remove(project);
+        employee.setProject(null);
 
-	@Override
-	public List<ProjectsResponseDto> getProjectsByEmployeeId(Long employeeId) {
-		 List<Project> projects = projectRepository.findProjectsByEmployeeId(employeeId);
-		 return projects.stream().map(project -> mapper.map(project, ProjectsResponseDto.class)).toList();
-	}
+        projectRepository.save(project);
+    }
+
+   
+    @Override
+    public ProjectsResponseDto getActiveProjectsByEmployee(Long employeeId) {
+        Project project = empRepo.findProjectByEmployeeId(employeeId);
+        return mapper.map(project, ProjectsResponseDto.class);
+    }
+
+   
+    @Override
+    public List<ProjectsResponseDto> getProjectsByEmployeeId(Long employeeId) {
+        return projectRepository.findProjectsByEmployeeId(employeeId)
+                .stream()
+                .map(p -> mapper.map(p, ProjectsResponseDto.class))
+                .toList();
+    }
 }

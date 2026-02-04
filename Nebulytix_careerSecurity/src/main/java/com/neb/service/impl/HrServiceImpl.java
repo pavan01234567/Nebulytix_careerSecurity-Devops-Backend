@@ -1,10 +1,5 @@
 package com.neb.service.impl;
 
-import java.io.File;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -69,6 +64,7 @@ import com.neb.repo.MisPunchRequestRepo;
 import com.neb.repo.PayslipRepository;
 import com.neb.repo.ProjectRepository;
 import com.neb.repo.UsersRepository;
+import com.neb.service.CloudinaryService;
 import com.neb.service.EmailService;
 import com.neb.service.HrService;
 import com.neb.service.NotificationService;
@@ -121,14 +117,18 @@ public class HrServiceImpl implements HrService {
     @Autowired
     private MisPunchRequestRepo MisPunchRequestRepo;
 
-    @Value("${daily-report.folder-path}")
-    private String dailyReportFolderPath;
+   
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @Value("${cloudinary.folder.reports}")
+    private String reportsFolder;
 
     @Override
     public EmployeeDetailsResponseDto getEmployee(Long id) {
-        Employee emp = empRepo.findById(id).orElseThrow(() -> new CustomeException("Employee not found with id: " + id));
+        Employee emp = empRepo.findById(id)
+                .orElseThrow(() -> new CustomeException("Employee not found"));
         return mapper.map(emp, EmployeeDetailsResponseDto.class);
-
     }
     @Override
     public String deleteById(Long id) {
@@ -208,10 +208,16 @@ public class HrServiceImpl implements HrService {
     }
 
     // ======================= PAYSLIP METHODS =========================
+//    @Override
+//    public byte[] downloadPayslip(Long payslipId) throws Exception {
+//        Payslip p = payslipRepo.findById(payslipId).orElseThrow(() -> new CustomeException("Payslip not found"));
+//        return Files.readAllBytes(Paths.get(p.getPdfPath()));
+//    }
     @Override
-    public byte[] downloadPayslip(Long payslipId) throws Exception {
-        Payslip p = payslipRepo.findById(payslipId).orElseThrow(() -> new CustomeException("Payslip not found"));
-        return Files.readAllBytes(Paths.get(p.getPdfPath()));
+    public String getPayslipUrl(Long payslipId) {
+        Payslip payslip = payslipRepo.findById(payslipId)
+                .orElseThrow(() -> new CustomeException("Payslip not found"));
+        return payslip.getPdfUrl();
     }
 
     @Override
@@ -248,54 +254,36 @@ public class HrServiceImpl implements HrService {
     @Override
     public String generateDailyReport(LocalDate reportDate) {
 
-        // ✅ USE FETCH JOIN METHOD
         List<DailyReport> reports =
                 dailyReportRepository.findReportsWithEmployee(reportDate);
 
         if (reports.isEmpty()) {
-            return "No daily reports found for date: " + reportDate;
+            return "No daily reports found";
         }
 
         try {
-            
-            System.out.println("Daily report path = " + dailyReportFolderPath);
-            System.out.println("Employee name check = " +
-                    reports.get(0).getEmployee().getFirstName());
+            byte[] pdfBytes = new ReportGeneratorPdf()
+                    .generateDailyReportForEmployees(reports, reportDate);
 
-            byte[] pdfBytes =
-                    new ReportGeneratorPdf()
-                            .generateDailyReportForEmployees(reports, reportDate);
+            String fileName = "daily-report-" + reportDate;
 
-            // ✅ SAFE PATH HANDLING
-            Path folder = Paths.get(dailyReportFolderPath)
-                               .toAbsolutePath()
-                               .normalize();
+            // ✅ UPLOAD TO CLOUDINARY
+            String reportUrl = cloudinaryService.uploadFile(
+                    pdfBytes,
+                    fileName,
+                    reportsFolder,
+                    "raw"
+            );
 
-            if (Files.notExists(folder)) {
-                Files.createDirectories(folder);
-            }
-
-            String fileName = "daily-report-" + reportDate + ".pdf";
-            Path filePath = folder.resolve(fileName);
-
-            try (OutputStream os = Files.newOutputStream(filePath)) {
-                os.write(pdfBytes);
-            }
-
-            String fileUrl = "/reports/daily/" + fileName;
-
-            reports.forEach(r -> r.setDailyReportUrl(fileUrl));
+            reports.forEach(r -> r.setDailyReportUrl(reportUrl));
             dailyReportRepository.saveAll(reports);
 
-            return fileUrl;
+            return reportUrl;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new CustomeException("Failed to generate PDF: " + e.getMessage());
+            throw new CustomeException("Daily report upload failed");
         }
     }
-
-
 
     @Override
     public String getDailyReportUrl(LocalDate reportDate) {
@@ -372,32 +360,45 @@ public class HrServiceImpl implements HrService {
         jobApplicationRepository.save(app);
     }
 
-	@Override
-	public void deletePayslip(Long id) {
-		
-		//  Find payslip
+//	@Override
+//	public void deletePayslip(Long id) {
+//		
+//		//  Find payslip
+//        Payslip payslip = payslipRepo.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Payslip not found with ID: " + id));
+//
+//        //  Delete file from filesystem
+//        if (payslip.getPdfPath() != null) {
+//
+//            File file = new File(payslip.getPdfPath());
+//
+//            if (file.exists()) {
+//                boolean deleted = file.delete();
+//                if (!deleted) {
+//                    throw new RuntimeException("Failed to delete file from disk: " + payslip.getPdfPath());
+//                }
+//            }
+//        }
+//
+//        //  Delete DB record
+//        payslipRepo.delete(payslip);
+//
+//        
+//    
+//	}
+    @Override
+    public void deletePayslip(Long id) {
+
         Payslip payslip = payslipRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Payslip not found with ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Payslip not found"));
 
-        //  Delete file from filesystem
+        // pdfPath = Cloudinary public_id
         if (payslip.getPdfPath() != null) {
-
-            File file = new File(payslip.getPdfPath());
-
-            if (file.exists()) {
-                boolean deleted = file.delete();
-                if (!deleted) {
-                    throw new RuntimeException("Failed to delete file from disk: " + payslip.getPdfPath());
-                }
-            }
+            cloudinaryService.deleteFile(payslip.getPdfPath());
         }
 
-        //  Delete DB record
         payslipRepo.delete(payslip);
-
-        
-    
-	}
+    }
 
 //	@Override
 //	@Transactional
@@ -761,58 +762,81 @@ public class HrServiceImpl implements HrService {
 
 			    return dto;
 			}
+//		 @Override
+//		 public TodayAttendanceCountDTO todayAttendanceCount() {
+//
+//		     List<Employee> employees = empRepo.findAll();
+//
+//		     long presentCount = 0;
+//		     long wfhCount = 0;
+//
+//		     LocalDate today = LocalDate.now();
+//
+//		     for (Employee emp : employees) {
+//
+//		         EmployeeLogInDetails session =
+//		                 empLoginRepo.findTopByEmployeeAndLogoutTimeIsNullOrderByLoginTimeDesc(emp);
+//
+//		        
+//		         if (session == null || session.getLoginTime() == null) {
+//		             continue;
+//		         }
+//
+//		        
+//		         LocalDate loginDate = session.getLoginTime()
+//		                                      .atZone(ZoneId.systemDefault())
+//		                                      .toLocalDate();
+//		         if (!loginDate.equals(today)) {
+//		             continue;
+//		         }
+//
+//	
+//		         System.out.println(
+//		                 "EMP=" + emp.getId() +
+//		                 " LOGIN=" + session.getLoginTime() +
+//		                 " STATUS=" + session.getDayStatus()
+//		         );
+//
+//		         String status = session.getDayStatus();
+//
+//		         if (status == null) {
+//		             continue;
+//		         }
+//
+//		         
+//		         if (status.contains(EmployeeDayStatus.PRESENT.name())) {
+//		             presentCount++;
+//		         }
+//		         else if (status.contains(EmployeeDayStatus.WFH.name())) {
+//		             wfhCount++;
+//		         }
+//		     }
+//
+//		     return new TodayAttendanceCountDTO(presentCount, wfhCount);
+//		 }
 		 @Override
-		 public TodayAttendanceCountDTO todayAttendanceCount() {
+		    public TodayAttendanceCountDTO todayAttendanceCount() {
+		        List<Employee> employees = empRepo.findAll();
+		        long present = 0, wfh = 0;
+		        LocalDate today = LocalDate.now();
 
-		     List<Employee> employees = empRepo.findAll();
+		        for (Employee emp : employees) {
+		            EmployeeLogInDetails session =
+		                    empLoginRepo.findTopByEmployeeAndLogoutTimeIsNullOrderByLoginTimeDesc(emp);
 
-		     long presentCount = 0;
-		     long wfhCount = 0;
+		            if (session == null || session.getLoginTime() == null) continue;
 
-		     LocalDate today = LocalDate.now();
+		            LocalDate loginDate = session.getLoginTime()
+		                    .atZone(ZoneId.systemDefault())
+		                    .toLocalDate();
 
-		     for (Employee emp : employees) {
+		            if (!loginDate.equals(today)) continue;
 
-		         EmployeeLogInDetails session =
-		                 empLoginRepo.findTopByEmployeeAndLogoutTimeIsNullOrderByLoginTimeDesc(emp);
-
-		        
-		         if (session == null || session.getLoginTime() == null) {
-		             continue;
-		         }
-
-		        
-		         LocalDate loginDate = session.getLoginTime()
-		                                      .atZone(ZoneId.systemDefault())
-		                                      .toLocalDate();
-		         if (!loginDate.equals(today)) {
-		             continue;
-		         }
-
-	
-		         System.out.println(
-		                 "EMP=" + emp.getId() +
-		                 " LOGIN=" + session.getLoginTime() +
-		                 " STATUS=" + session.getDayStatus()
-		         );
-
-		         String status = session.getDayStatus();
-
-		         if (status == null) {
-		             continue;
-		         }
-
-		         
-		         if (status.contains(EmployeeDayStatus.PRESENT.name())) {
-		             presentCount++;
-		         }
-		         else if (status.contains(EmployeeDayStatus.WFH.name())) {
-		             wfhCount++;
-		         }
-		     }
-
-		     return new TodayAttendanceCountDTO(presentCount, wfhCount);
-		 }
+		            if (EmployeeDayStatus.PRESENT.name().equals(session.getDayStatus())) present++;
+		            if (EmployeeDayStatus.WFH.name().equals(session.getDayStatus())) wfh++;
+		        }
+		        return new TodayAttendanceCountDTO(present, wfh);
+		    }
 
 		 public String regulationRejectOrApproval(Long EmployeeId, LocalDate misPunchDate, ApprovalStatus status) {
 
