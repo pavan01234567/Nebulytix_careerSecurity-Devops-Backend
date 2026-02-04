@@ -61,12 +61,12 @@ public class Work {
     private String attachmentUrl;
 
 	public void setProject(Project project) {
-		// TODO Auto-generated method stub
+		
 		
 	}
 
 	public static Optional<Users> stream() {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
 }

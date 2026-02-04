@@ -31,19 +31,19 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     }
 
     // Upload using byte[]
-    @Override
-    public String uploadFile(byte[] fileBytes, String fileName, String folder, String resourceType) {
-        try {
-            Map<String, Object> uploadResult = cloudinary.uploader().upload(fileBytes, ObjectUtils.asMap(
-                    "folder", folder,
-                    "public_id", fileName,
-                    "resource_type", resourceType
-            ));
-            return (String) uploadResult.get("secure_url");
-        } catch (Exception e) {
-            throw new RuntimeException("Cloudinary upload failed: " + e.getMessage(), e);
-        }
-    }
+//    @Override
+//    public String uploadFile(byte[] fileBytes, String fileName, String folder, String resourceType) {
+//        try {
+//            Map<String, Object> uploadResult = cloudinary.uploader().upload(fileBytes, ObjectUtils.asMap(
+//                    "folder", folder,
+//                    "public_id", fileName,
+//                    "resource_type", resourceType
+//            ));
+//            return (String) uploadResult.get("secure_url");
+//        } catch (Exception e) {
+//            throw new RuntimeException("Cloudinary upload failed: " + e.getMessage(), e);
+//        }
+//    }
 
     // Upload using MultipartFile
     @Override
@@ -74,5 +74,15 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         } catch (Exception e) {
             throw new RuntimeException("Cloudinary download failed: " + e.getMessage(), e);
         }
+    }
+    
+ // Inside your CloudinaryService.java
+    public String uploadFile(byte[] bytes, String fileName, String folder, String resourceType) throws IOException {
+        Map uploadResult = cloudinary.uploader().upload(bytes, ObjectUtils.asMap(
+            "public_id", fileName,
+            "folder", folder,
+            "resource_type", resourceType // This will now be "image"
+        ));
+        return (String) uploadResult.get("secure_url");
     }
 }
